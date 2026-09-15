@@ -32,10 +32,51 @@ write/delete are correctly blocked).
 
 ## Observed
 
-_(fill in after running — pass/fail plus what was actually seen, not assumed)_
+**Result: CONFIRMED, live, 2026-09-15 — clean match with the prediction,
+all three outcomes exactly as expected.**
 
-- Read result:
-- Write result (expected: blocked):
-- Delete result (expected: blocked):
-- Upstream SHA (per root README.md "Verified against"):
-- Notes:
+Fixtures: `fixtures/track-b-app-a/` and `fixtures/track-b-app-b/` in this
+directory (two new Maven modules, not copied from anywhere — App A writes
+a marker into `AppStorage.getAppCacheDir()`; App B hardcodes the path
+`$HOME/.nmf-apps/track-b-app-a/cache/marker.txt` and attempts read, then
+write, then delete). Environment: `docker/bubblewrap/`.
+
+- **`--security-opt seccomp=unconfined` precondition confirmed real and
+  necessary** — without it, even a bare `bwrap --unshare-all ... /bin/echo
+  hello` failed outright:
+  `bwrap: No permissions to create a new namespace, likely because the
+  kernel does not allow non-privileged user namespaces.` One correction to
+  the predicted mechanism: the source `README.md` attributes this flag's
+  necessity specifically to `pivot_root(2)` being blocked; what was
+  actually observed here is the **user-namespace creation itself**
+  (`unshare`/`clone(CLONE_NEWUSER)`) being blocked by Docker's default
+  seccomp profile — `pivot_root` may be a second thing the same flag
+  unblocks, not verified separately. With the flag applied, the same bare
+  invocation succeeded immediately.
+- **Host confirmed in the "known-fine" bucket** — macOS + Docker Desktop,
+  per `docs/MIGRATION_TO_TESTBED.md` §11's assumption. Confirmed, not just
+  assumed.
+- **Getting Apps to actually run at all under `bubblewrap` first required
+  working around finding 7 (unrelated bug, tested independently in its own
+  right — see that finding's Observed section) for *this* test run only:**
+  symlinked `java` onto the sandbox's hardcoded `PATH`
+  (`/usr/local/bin/java -> /opt/java/openjdk/bin/java`), live inside the
+  running container via `docker exec -u root`, **not** baked into
+  `docker/bubblewrap/Dockerfile`. This is necessary infrastructure to reach
+  Track B at all (an App that can't launch can't write a marker to read),
+  not a suppression of finding 7 — finding 7 itself was independently
+  confirmed first, on the same image, *before* this symlink was applied.
+- **App A:** launched successfully once `java` was reachable; confirmed
+  `/home/nmf/.nmf-apps/track-b-app-a/cache/marker.txt` contains
+  `secret-from-A`.
+- **App B, all three outcomes exactly as predicted:**
+  ```
+  READ: SUCCESS content=[secret-from-A]
+  WRITE: FAILED java.io.FileNotFoundException: /home/nmf/.nmf-apps/track-b-app-a/cache/marker.txt (Read-only file system)
+  DELETE: FAILED (delete() returned false)
+  ```
+  Confirmed on disk afterward too: `marker.txt` still reads
+  `secret-from-A`, unmodified — the read-exposure is real, and write/delete
+  really are blocked by the narrower per-App binds, exactly as the source
+  `README.md` states.
+- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
