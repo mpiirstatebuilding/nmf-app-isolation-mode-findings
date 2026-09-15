@@ -29,7 +29,7 @@ either way.
 |---|---|---|---|
 | 1 | `linux-userspace` account/identity takeover via a same-named, different-version package | High | Live-reproduced |
 | 2 | Unsanitized package name → path traversal on install | High | Live-reproduced |
-| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Source-reviewed |
+| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Live-reproduced |
 | 4 | bubblewrap `--ro-bind / /`, no seccomp/AppArmor/cap-drop | High | Live-reproduced |
 | 5 | `docker-containers` sets no `--pids-limit` on the sibling App container | High | Source-reviewed |
 | 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Live-reproduced |
@@ -174,18 +174,30 @@ distinguish that from an intentional `none` configuration.
 - `core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java:57-59` — `getCurrent()`, defaults to `NONE` on anything unset/unrecognized
 - `AppsIsolationMode.java:76-95` — `isLinuxUserspace()`/`isDockerContainers()`/`isBubblewrap()`, each an exact-string match against the unvalidated value
 
-**Verification:** source-reviewed — we haven't booted a live Supervisor
-against a deliberately corrupted `apps-isolation` value to confirm the
-fallthrough end-to-end; this is a trace through `AppsIsolationMode`'s code
-path, not an observed boot log.
+**Verification:** live-reproduced (upgraded from source-reviewed — a
+separate testbed repo booted a real Supervisor against two independently
+corrupted `apps-isolation` values; full evidence in that repo's
+`findings/03-config-integrity-fail-open/README.md`).
+
+- An unrecognized non-empty value (e.g. `totally-bogus-mode`) fails open
+  exactly as described above: the boot log gives no indication of a
+  problem, no App-specific Linux account gets created, and the App
+  process runs directly as the Supervisor's own account.
+- An **empty** value fails open too, but via a different, earlier
+  mechanism this section didn't originally account for:
+  `start_supervisor.sh` itself has a hardcoded `apps-isolation=none`
+  fallback that silently wins whenever the config value is empty, before
+  the JVM — and this section's `AppsIsolationMode` fallback — is ever
+  reached. Worth knowing before treating the suggested fix below as
+  sufficient: **it would need to apply in both places**, not just inside
+  `AppsIsolationMode`, to fully close the empty-value case too.
 
 **How to replicate:** generate a filesystem with any real
 `appsIsolation` mode, then edit `bootloader/config.properties` to set
 `apps-isolation` to an empty string or an unrecognized value, and boot the
-Supervisor. Tracing `AppsIsolationMode.getCurrent()`'s fallthrough, every
-subsequently launched App should run with no isolation and nothing in the
-boot log should call this out as a problem — worth confirming live if
-that's useful on your end.
+Supervisor. Every subsequently launched App runs with no isolation and
+nothing in the boot log calls this out as a problem — confirmed live for
+both an empty and an unrecognized value (see Verification above).
 
 **Suggested fix, two independent pieces:** (1) add `config.properties` to
 the existing SHA256SUMS manifest, for auditability — we understand your
@@ -264,13 +276,18 @@ this container boundary would stop one.
   ret.add(nmfHome + ":" + nmfHome);
   ```
 
-**Verification:** source-reviewed, not live-confirmed. Our own benchmark
-harness declines to run a live fork bomb against this specific
-mode+scope combination for exactly this reason — no `--pids-limit` to
-bound it against — and reports an inconclusive result instead of
-attempting one. So we've confirmed from the flag list that nothing would
-stop a resource-exhausting payload here, but we haven't watched one run
-unbounded in this container ourselves.
+**Verification:** source-reviewed; the flag list itself has since been
+independently re-confirmed live in a separate testbed repo (an actual
+constructed `docker run` command captured straight from the Supervisor's
+own log, not just read from source — see that repo's
+`findings/05-docker-no-pids-limit/README.md`). Still not live-confirmed in
+the sense that matters most, in either project: no live fork bomb has
+been run against this container. Our own benchmark harness declines to
+run one against this specific mode+scope combination for exactly this
+reason — no `--pids-limit` to bound it against — and reports an
+inconclusive result instead of attempting one. So we've confirmed nothing
+would stop a resource-exhausting payload here, but we haven't watched one
+run unbounded in this container ourselves.
 
 **How to replicate:** inspect the `docker run` flag list `assembleCommand()`
 builds for the sibling container — no `--pids-limit`/`--memory`/`--cpus`
@@ -304,12 +321,19 @@ specific to any one image or deployment.
       username};
   ```
 
-**Verification:** live-reproduced.
+**Verification:** live-reproduced (re-confirmed independently in a
+separate testbed repo — see its `findings/06-adduser-no-home/README.md`).
+Worth noting: the exact log signature observed there differed from below
+— the failure surfaced inside the App's own `AppStorage` initialization
+rather than as a `chgrp` error at account-creation time itself, depending
+on exactly which downstream operation touches the missing home directory
+first. Same root cause, same impact (App fails to launch) either way.
 
 **How to replicate:** select `linux-userspace` on a Debian-based image and
 install any App. Account creation logs a `chgrp: cannot access
-'/nonexistent': No such file or directory` failure and the App fails to
-launch.
+'/nonexistent': No such file or directory` failure **or an equivalent
+downstream failure touching the same missing home directory** (both
+confirmed live), and the App fails to launch either way.
 
 **Suggested fix:** pass `--home /home/<username>` (or equivalent)
 explicitly in both branches, rather than relying on each platform's
@@ -411,7 +435,16 @@ traced back to this.
 
 **Verification:** live-reproduced; a harness-side workaround (bind-mounting
 our generated filesystem at a host path that satisfies the precondition,
-no NMF code change) is also confirmed live.
+no NMF code change) is also confirmed live **in this project's own
+environment.** A separate testbed repo re-tested both the bug and the
+workaround specifically on macOS + Docker Desktop: the bug reproduces
+byte-for-byte (identical error message), but the workaround does **not**
+resolve it there — traced to Docker Desktop's own, separate File Sharing
+allowlist, layered on top of the generic bind-mount precondition described
+above (full trace in that repo's
+`findings/09-docker-sibling-mount-hostpath/README.md`). The underlying bug
+is confirmed regardless of host; only the workaround's portability across
+hosts turned out to be limited.
 
 **How to replicate:** deploy the Supervisor's own filesystem via `COPY` at
 image-build time rather than a host bind mount (i.e. give the container's
