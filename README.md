@@ -1,6 +1,9 @@
 # Findings from NMF isolation-mode benchmarking
 
-**Verified against:** `origin/v5.1`
+**Verified against:** `origin/v5.1` @ `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+(fresh clone, 2026-09-15 — same tip the source project's own findings were
+verified against, `v5.1` hadn't moved). Every source citation below and in
+`findings/NN-*/` refers to this exact commit.
 
 This repo is a **testbed**: each finding below is reproduced live and
 independently under `findings/NN-*/`, with setup steps in `docs/SETUP.md`

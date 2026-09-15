@@ -13,9 +13,12 @@ and section 4 for the `tools/runapp-trigger` build (`mvn package` in that
 directory, once the checkout has populated `~/.m2`).
 
 **Pinned upstream SHA:** owned by the root `README.md`'s "Verified against"
-line, not restated here — record the fresh checkout's `git rev-parse HEAD`
-there (migration doc §5 step 2) once the checkout exists, and cite that
-same line from every source citation in `findings/NN-*/`.
+line, not restated here — cite that same line from every source citation in
+`findings/NN-*/`. Fresh checkout cloned 2026-09-15 at
+`/Users/User/IdeaProjects/nanosat-mo-framework-v5.1` (outside this repo,
+not committed — a plain `git clone --branch v5.1` of upstream). Clean
+working tree, confirmed at the same tip the source project's findings were
+originally verified against.
 
 ## App-scope setup (needed by findings 1, 2, 6, 8)
 
