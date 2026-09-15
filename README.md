@@ -2,6 +2,12 @@
 
 **Verified against:** `origin/v5.1`
 
+This repo is a **testbed**: each finding below is reproduced live and
+independently under `findings/NN-*/`, with setup steps in `docs/SETUP.md`
+and the migrated trigger tooling in `tools/runapp-trigger/`. See
+`docs/MIGRATION_TO_TESTBED.md` for how this was assembled and
+`docs/PROVENANCE.md` for two related-but-not-included findings.
+
 Ordered by how severe/reachable we think each one is, most important first.
 
 Only finding 1 is specifically an App-vs-App concern — it requires two

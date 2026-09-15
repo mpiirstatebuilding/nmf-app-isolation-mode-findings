@@ -1,0 +1,7 @@
+.idea/
+target/
+results/
+.DS_Store
+*.pem
+*.key
+*.env
