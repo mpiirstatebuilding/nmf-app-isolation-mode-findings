@@ -34,10 +34,12 @@ Supervisor, not whether `appsIsolation` itself works.
    (`int.esa.nmf:nanosat-mo-framework:5.1-SNAPSHOT` parent already
    populated) — `mvn -o package` in `tools/runapp-trigger/` succeeds and
    produces a runnable fat jar.
-3. Install + trigger it:
+3. Install + trigger it (see "Docker networking" below for the exact
+   `directoryURI` to use when the Supervisor runs in a container, which is
+   every mode in this testbed):
    ```bash
    java -jar runapp-trigger-jar-with-dependencies.jar \
-     maltcp://127.0.0.1:1024/nanosat-mo-supervisor-Directory \
+     maltcp://<supervisor-address>:1024/nanosat-mo-supervisor-Directory \
      hello-world hello-world-5.0.nmfpack
    ```
    **Remember the two-names gotcha (this distinction is finding 8 itself):**
@@ -48,6 +50,51 @@ Supervisor, not whether `appsIsolation` itself works.
    `findPackage`+`install` before `listApp`/`runApp` — an App sitting in
    `packages/` is not auto-installed at boot, so this step is required, not
    optional, for `listApp` to find it at all.
+
+## Docker networking (containerized Supervisor)
+
+**Confirmed live 2026-09-15 for `linux-userspace` only**, macOS + Docker
+Desktop — not yet exercised for the other three modes, which need
+different container invocations anyway (finding 9 specifically requires
+the Supervisor's filesystem NOT be host-bind-mounted; findings 4/7 need
+`--security-opt seccomp=unconfined` and a bubblewrap-capable host path).
+Treat this as a starting point for those, not an assumption that it
+transfers unchanged.
+**run `RunAppTrigger` (and any consumer) as a container on the same Docker
+network as the Supervisor, and address it by its real bridge IP** (`docker
+inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+<container>`) — do not try to reach the Supervisor from the macOS host
+directly, and do not force the transport to advertise/bind `127.0.0.1`:
+
+- The Supervisor's default `autohost` behavior advertises its own bridge IP
+  (e.g. `172.17.0.2`) as its provider URI. That's unreachable from the
+  macOS host's own network stack even with `-p 1024:1024` published,
+  because subsequent PackageManagement/AppsLauncher calls dial whatever
+  host:port string the Directory response embeds — not necessarily the
+  same path the initial published-port connection went through.
+- Forcing loopback instead (`-Dorg.ccsds.moims.mo.mal.transport.tcpip.host=127.0.0.1`
+  etc., patched into `start_supervisor.sh`'s JVM invocation) was tried and
+  abandoned: the initial Directory lookup still succeeds, but the
+  subsequent `findPackage`/`install` calls stalled — killed after ~150s
+  with no response, not a diagnosed permanent hang. Suspected cause: the
+  async response path needs the Supervisor container to dial back to the
+  client's own advertised address, and a host-side client's address isn't
+  reachable from inside the container's namespace either — but this wasn't
+  root-caused further once the peer-container approach worked instead.
+- A plain `transport.properties` file dropped into the generated
+  filesystem's root is **not** picked up by `start_supervisor.sh` (it
+  isn't on the JVM's classpath) — don't rely on it; use system properties
+  patched directly into the JVM invocation if a transport property must be
+  forced at all.
+- What works: leave the Supervisor's default `autohost` alone, run the
+  consumer in a container on the same (default bridge) network, e.g.:
+  ```bash
+  docker run --rm \
+    -v /path/to/runapp-trigger-jar-with-dependencies.jar:/work/runapp-trigger.jar:ro \
+    -w /work eclipse-temurin:21-jre \
+    java -jar runapp-trigger.jar maltcp://<supervisor-bridge-ip>:1024/nanosat-mo-supervisor-Directory \
+    hello-world hello-world-5.0.nmfpack
+  ```
 
 ## Cross-app ("Track B") setup (needed by finding 4)
 

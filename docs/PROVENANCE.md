@@ -23,3 +23,25 @@ No other internal-log content is carried into this repo — see
 `docs/MIGRATION_TO_TESTBED.md` section 3 for the full internal-to-outreach
 numbering map, and section 6 for why this stays a two-fact appendix rather
 than a fuller migration.
+
+## New discovery, this testbed (not from the source project's internal log)
+
+- **NMF's own generated `setup_linux_userspace.sh` has the same `adduser`
+  gap finding 6 reports, at a different call site, and it's more severe.**
+  Confirmed live 2026-09-15 building `docker/linux-userspace/`: the script
+  creates the Supervisor's own `nmf-admin` account via
+  `adduser --system --shell ... --group`, no `--home` — same Debian/Ubuntu
+  default-to-`/nonexistent` behavior finding 6 cites at
+  `LinuxUsersGroups.java:98-100`, but this is a *different* code path
+  (`nmf-linux-maven-plugin`'s generated `setup_linux_userspace.sh`, not
+  `LinuxUsersGroups.java`) and a different blast radius: the **Supervisor
+  itself** can't start at all (`AppStorage`/`OneInstanceLock` needs a
+  writable home), not just one App. This is the first thing anyone
+  deploying `linux-userspace` mode on a stock Debian/Ubuntu image would
+  hit, before any App is even installed. Worked around at the
+  infrastructure level in `docker/linux-userspace/Dockerfile` (explicit
+  `usermod -d`) so the testbed's own findings could proceed — not one of
+  the 9 findings sent to César, and not yet decided whether it's worth
+  reporting to him. **Flagged here for Mari's call, not decided
+  unilaterally** — see `findings/06-adduser-no-home/README.md`'s Observed
+  section for the full live evidence.
