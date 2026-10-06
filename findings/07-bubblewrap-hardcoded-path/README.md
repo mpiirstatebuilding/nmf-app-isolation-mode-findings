@@ -61,5 +61,5 @@ against each version (`docs/SETUP.md`). Raw Supervisor logs are in
   is reported to the operator as a clean exit. Traced to `/dev/null` not
   being writable inside the sandbox, which defeats `start_app.sh`'s
   exit-code re-export. It affects every App failure under bubblewrap, not
-  just this one; root `README.md` §7b has the details. Logs:
-  `results/reverify-2026-10/*-bubblewrap-exitcode-masking.supervisor.log`.
+  just this one, so it is now its own finding: see
+  `findings/10-bubblewrap-exit-code-masked/` and root `README.md` §10.

@@ -2,14 +2,14 @@
 
 ## Purpose
 
-This repo reproduces, live and independently, the 9 NMF (NanoSat MO
+This repo reproduces, live and independently, the 10 NMF (NanoSat MO
 Framework) app-isolation findings already written up for César Coelho
 (NMF maintainer/developer, Terma GmbH/ESA) in the root `README.md`. It was
 migrated from a separate Phase-1 isolation-benchmarking project
 (`nanosats-framework`) per `docs/MIGRATION_TO_TESTBED.md` — that document
 is the canonical migration runbook; don't re-derive its scope or manifest
 decisions from scratch. This repo's own job is narrower than the source
-project's: demonstrate the 9 bugs, not re-run a 4-mode benchmark suite.
+project's: demonstrate the 10 bugs, not re-run a 4-mode benchmark suite.
 
 ## Documentation ownership (avoid bloat)
 
@@ -18,7 +18,7 @@ restating it:
 
 | Fact type | Owner |
 |---|---|
-| The 9 findings (impact, source citations, repro, suggested fix) | root `README.md` |
+| The 10 findings (impact, source citations, repro, suggested fix) | root `README.md` |
 | Pinned upstream SHA (all source citations cite this) | root `README.md`'s "Verified against" line |
 | Non-target internal-log findings (fixed / retracted) | `docs/PROVENANCE.md` |
 | Shared setup procedures (app-scope trigger, Track B cross-app) | `docs/SETUP.md` |

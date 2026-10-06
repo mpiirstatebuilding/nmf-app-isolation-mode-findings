@@ -5,12 +5,15 @@
 `master` @ `126d4379d73703a56848170e4c070c068ef0e424` ("Release 5.1 (#193)")
 is a squash of that tag with a byte-identical tree, so the line numbers
 hold for either. Every source citation below and in `findings/NN-*/` refers
-to this exact tree. All 9 findings were first checked live on the
+to this exact tree. Findings 1–9 were first checked live on the
 pre-release `v5.1` tip `0933302` (2026-09-15) and re-run live on this release
 (finding 5 via its captured launch command, no fork bomb, per its
 "Source-reviewed" status in the table below).
 
-**Also re-run live, all 9, on `v6.0`, with the same results** @
+Finding 10 was found during that re-run and is live-reproduced on this
+release.
+
+**Also re-run live, all 10, on `v6.0`, with the same results** @
 `5cc91528a92e4ad37d20271f4ee4d734c8209aa4` (the in-development 6.0 branch,
 2026-10-06). None of its commits touch the code behind these findings. The
 one move that affects citations: `nmf-package-lib` was merged into
@@ -24,17 +27,19 @@ and the migrated trigger tooling in `tools/runapp-trigger/`. See
 `docs/MIGRATION_TO_TESTBED.md` for how this was assembled and
 `docs/PROVENANCE.md` for two related-but-not-included findings.
 
-Ordered by how severe/reachable we think each one is, most important first.
+Findings 1–9 are ordered by how severe/reachable we think each one is,
+most important first. Finding 10 was found later and is appended rather
+than renumbering the rest; we'd rank it alongside finding 7.
 
 Only finding 1 is specifically an App-vs-App concern — it requires two
 Apps colliding on the same declared name, so it's moot for a single-org
 mission where one trusted party submits every App. Findings 4 and 5 are
 App-vs-host, not App-vs-App: they let a single App reach beyond its own
 sandbox into the host filesystem or its resources, which matters
-regardless of how many organizations submit Apps. Findings 2, 3, 6, and 7
+regardless of how many organizations submit Apps. Findings 2, 3, 6, 7, and 10
 are Supervisor-level or functional bugs — an unsanitized-name path
-traversal, a fail-open boot config, a broken account-creation flow, and a
-hardcoded PATH — that apply to any deployment shape, not just our own
+traversal, a fail-open boot config, a broken account-creation flow, a
+hardcoded PATH, and App failures reported as clean exits — that apply to any deployment shape, not just our own
 multi-tenant one. Findings 8 and 9 aren't isolation issues and apply
 either way.
 
@@ -46,9 +51,10 @@ either way.
 | 4 | bubblewrap `--ro-bind / /`, no seccomp/AppArmor/cap-drop | High | Live-reproduced |
 | 5 | `docker-containers` sets no `--pids-limit` on the sibling App container | High | Source-reviewed |
 | 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Live-reproduced |
-| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override; 7b: App exit codes reported as 0 under bubblewrap | Medium | Live-reproduced |
+| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override | Medium | Live-reproduced |
 | 8 | PackageManagement/AppsLauncher key the same App by two different names | Minor (UX) | Live-reproduced |
 | 9 | `docker-containers` sibling-mount host-path precondition is undocumented | Doc gap | Live-reproduced |
+| 10 | bubblewrap: every App failure is reported as exit 0 / `EXITED` | Medium | Live-reproduced |
 
 ## 1. `linux-userspace`: a same-named package with a different version silently takes over another App's account and files
 
@@ -380,52 +386,6 @@ it onto one of those three directories.
 **Suggested fix:** derive the sandboxed `PATH` from the launching JVM's own
 `java.home`, or expose it as an overridable system property.
 
-### 7b. Related, found while reproducing 7: under bubblewrap, every App failure is reported as a clean exit
-
-When the launch above fails, the Supervisor records the App as `process
-exited with code 0, classified as EXITED`. The real exit code was 127. This
-isn't specific to the missing `java`: an ordinary crash (a
-`ClassNotFoundException`, real exit code 1) is recorded as exit 0 the same
-way.
-
-The cause is in the last line of the generated `start_app.sh`. It is
-meant to re-export the App's real exit code from a sidecar `.exit` file:
-
-```sh
-exit "$(cat "$LOG_PATH/$FILENAME.exit" 2>/dev/null || echo 0)"
-```
-
-The bubblewrap sandbox has no `--dev`, so `/dev/null` there is the host
-device node on the read-only `--ro-bind / /` mount. Writing to it fails with
-`cannot create /dev/null: Permission denied`. The `2>/dev/null` redirection
-fails, so `cat` never runs, the `|| echo 0` fallback fires, and the script
-exits 0. The `.exit` file itself does hold the right code, because the logs
-directory is bind-mounted writable.
-
-**Impact:** under `bubblewrap`, the Supervisor and anything that monitors
-App state (including the AppStopped event it archives) can't tell a crashed
-App from a cleanly exited one.
-
-**Where:**
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/AuxFilesGenerator.java:118` — the `exit "$(cat ... 2>/dev/null || echo 0)"` line, which defaults to 0 when it can't read the code
-- `AppsLauncherManagerBubblewrap.java:84` — `--ro-bind / /`, with no `--dev /dev` anywhere in `assembleCommand()`
-
-**Verification:** live-reproduced on `release-5.1` and `v6.0`. A
-`start_app.sh` traced with `sh -x` inside the exact sandbox shows `echo 127`
-into the `.exit` file, then `cannot create /dev/null: Permission denied`,
-then `exit 0`.
-
-**How to replicate:** under `bubblewrap`, launch any App that exits
-non-zero, for example one whose `MAIN_CLASS` doesn't exist. The Supervisor
-log says `exited with code 0, classified as EXITED`, while
-`logs/app_<name>/<name>_<date>.log.exit` holds the real code.
-
-**Suggested fix:** add `--dev /dev` to the bubblewrap arguments, which
-gives the sandbox a working `/dev/null` (confirmed live). Separately, the
-script shouldn't default to 0 when it can't read the code. A non-zero
-default, such as `|| echo 1`, would report "unknown" as a failure instead
-of a success.
-
 ## 8. PackageManagement and AppsLauncher key the same App by two different names
 
 `findPackage`/`install` (PackageManagement) key off the package's
@@ -514,6 +474,53 @@ mount-denied error above.
 dynamically, which is the right approach. This is a documentation-only
 gap: call out the host-bind-mount precondition explicitly next to the
 `docker-containers` mode / Docker deployment instructions.
+
+## 10. Under bubblewrap, every App failure is reported to the Supervisor as a clean exit
+
+Found on 2026-10-06 while re-running finding 7, after the first nine went
+to you. When finding 7's launch fails, the Supervisor records the App as
+`process exited with code 0, classified as EXITED`, although the real exit
+code was 127. This isn't specific to the missing `java`: an ordinary crash
+(a `ClassNotFoundException`, real exit code 1) is recorded as exit 0 the
+same way.
+
+The cause is in the last line of the generated `start_app.sh`. It is
+meant to re-export the App's real exit code from a sidecar `.exit` file:
+
+```sh
+exit "$(cat "$LOG_PATH/$FILENAME.exit" 2>/dev/null || echo 0)"
+```
+
+The bubblewrap sandbox has no `--dev`, so `/dev/null` there is the host
+device node on the read-only `--ro-bind / /` mount. Writing to it fails with
+`cannot create /dev/null: Permission denied`. The `2>/dev/null` redirection
+fails, so `cat` never runs, the `|| echo 0` fallback fires, and the script
+exits 0. The `.exit` file itself does hold the right code, because the logs
+directory is bind-mounted writable.
+
+**Impact:** under `bubblewrap`, the Supervisor and anything that monitors
+App state (including the AppStopped event it archives) can't tell a crashed
+App from a cleanly exited one.
+
+**Where:**
+- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/AuxFilesGenerator.java:118` — the `exit "$(cat ... 2>/dev/null || echo 0)"` line, which defaults to 0 when it can't read the code
+- `AppsLauncherManagerBubblewrap.java:84` — `--ro-bind / /`, with no `--dev /dev` anywhere in `assembleCommand()`
+
+**Verification:** live-reproduced on `release-5.1` and `v6.0`. A
+`start_app.sh` traced with `sh -x` inside the exact sandbox shows `echo 127`
+into the `.exit` file, then `cannot create /dev/null: Permission denied`,
+then `exit 0`.
+
+**How to replicate:** under `bubblewrap`, launch any App that exits
+non-zero, for example one whose `MAIN_CLASS` doesn't exist. The Supervisor
+log says `exited with code 0, classified as EXITED`, while
+`logs/app_<name>/<name>_<date>.log.exit` holds the real code.
+
+**Suggested fix:** add `--dev /dev` to the bubblewrap arguments, which
+gives the sandbox a working `/dev/null` (confirmed live). Separately, the
+script shouldn't default to 0 when it can't read the code. A non-zero
+default, such as `|| echo 1`, would report "unknown" as a failure instead
+of a success.
 
 ## Known limitation, for context — not an NMF bug
 
