@@ -81,7 +81,7 @@ Supervisor-level — `linux-userspace` was just what was already running).
   from `Metadata.store()` (`NMFPackageManager.java:206`), logged `SEVERE`
   by `NMFPackagePMBackend.install()`'s own catch (the same broad,
   install()-level catch finding 1 cites). Root cause traced precisely:
-  `Metadata.store()` (`Metadata.java:240-248`) calls
+  `Metadata.store()` (`Metadata.java:253-261`) calls
   `new File(file.getParent()).mkdirs()` before opening the
   `FileOutputStream` — but `file.getParent()` is the *textual* parent
   (`.../installations-tracker/../../outside-target`, `../` un-resolved as
@@ -112,4 +112,24 @@ Supervisor-level — `linux-userspace` was just what was already running).
   (`app-../../outside-target/pwned-app` is 34 bytes) — caught by the same
   broad catch finding 1 cites. Orthogonal to the traversal bug; would not
   occur under `none`/`bubblewrap`/`docker-containers`.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- Identical on both refs, including the two discrepancies recorded above:
+  - the log-dir traversal created `logs/outside-target/pwned-app/`
+  - `outside-target/` stayed empty, because `AuxFilesGenerator` silently
+    swallows its write failures even though it printed "Creating file on:
+    .../apps/../../outside-target/pwned-app/..."
+  - the receipt write failed with the same `FileNotFoundException` on
+    `etc/installations-tracker/../../outside-target/pwned-app.receipt`,
+    logged `SEVERE`
+- `RunAppTrigger` was still told "Package ... installed."
+- The `linux-userspace`-only 32-byte username failure also recurred.

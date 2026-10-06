@@ -39,8 +39,23 @@ not on bubblewrap's hardcoded `/usr/local/bin:/usr/bin:/bin`.
   hardcoded `PATH`, live, in a *separate* run — not baked into this
   finding's own image) in order to test Track B; that confirms this really
   is the blocking factor, not a red herring.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
 - Environment: `docker/bubblewrap/`, run with `--security-opt
   seccomp=unconfined` (see finding 4's Observed section for that
   precondition's own discovery — without it, `bwrap` itself can't even
   start, a different, earlier failure than this one).
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- Identical on both refs: the App log shows `./start_app.sh: 46: java: not
+  found`, and the sidecar `.exit` file holds `127`.
+- Recorded more precisely than before: the Supervisor logs this same run as
+  `process exited with code 0, classified as EXITED`. So the launch failure
+  is reported to the operator as a clean exit.

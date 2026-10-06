@@ -79,4 +79,27 @@ write, then delete). Environment: `docker/bubblewrap/`.
   `secret-from-A`, unmodified — the read-exposure is real, and write/delete
   really are blocked by the narrower per-App binds, exactly as the source
   `README.md` states.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- App B's three outcomes were identical on both refs:
+  ```
+  READ: SUCCESS content=[secret-from-A]
+  WRITE: FAILED java.io.FileNotFoundException: /home/nmf/.nmf-apps/track-b-app-a/cache/marker.txt (Read-only file system)
+  DELETE: FAILED (delete() returned false)
+  ```
+  The marker on disk was unchanged afterwards.
+- The seccomp precondition was re-confirmed on Docker Desktop 29.7.2.
+  Without `--security-opt seccomp=unconfined`, a bare `bwrap --unshare-all
+  --ro-bind / / /bin/echo hello` still fails with the same "No permissions
+  to create a new namespace" error. With the flag, it prints `hello`.
+- Finding 7 was again confirmed first. Then the same live-only `java`
+  symlink was applied to reach Track B.

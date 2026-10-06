@@ -53,4 +53,19 @@ classification.
   command is fully assembled and logged *before* `ProcessBuilder.start()`
   is even called, so the missing flags are confirmed regardless of
   whether the sibling container goes on to run successfully.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- The captured sibling `docker run` command is identical on both refs, and
+  still has no `--pids-limit`, `--memory` or `--cpus`. As before, no fork
+  bomb was run.
+- On v6.0, the cited log line is `AppsLauncherManager.java:503-505`. The
+  code is unchanged; two lines were removed above it.

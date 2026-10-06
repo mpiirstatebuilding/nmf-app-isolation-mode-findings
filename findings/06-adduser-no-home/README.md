@@ -57,6 +57,33 @@ finding 3 states explicitly).
   with code 1, classified as CRASHED`). Same root cause, same overall
   impact the source `README.md` states ("a linux-userspace-mode App fails
   to launch outright") — just a different log signature than predicted.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
 - Environment: `docker/linux-userspace/`, see findings/01's Observed section
   for the shared setup.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- The App still crashes on launch on both refs (`exited with code 1,
+  classified as CRASHED`). It crashes through the same
+  `AppStorage.mkDirAndSetPermissions` → `/nonexistent/.nmf-apps` chain,
+  reached via `OneInstanceLock`. Before that, the log shows a failed write
+  of `/nonexistent/.mo-services/providerURIs.properties`.
+- **Delta from the 2026-09-15 run:** the originally predicted signature now
+  *does* appear, on every install, at account creation:
+  ```
+  INFO: The permissions of the User Home directory could not be set for username: app-hello-world
+   >> sudo chgrp --recursive nmf-admin /nonexistent
+  chgrp: cannot access '/nonexistent': No such file or directory
+  ```
+  The September run recorded this as absent for the first install. The cause
+  of the difference wasn't determined. `NMFPackageManager`,
+  `LinuxUsersGroups`, `AppStorage` and `OneInstanceLock` are unchanged
+  between `0933302` and `release-5.1`. Either way, the root `README.md` §6
+  note that the signature varies still covers it.

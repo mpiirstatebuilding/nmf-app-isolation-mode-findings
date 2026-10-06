@@ -1,9 +1,20 @@
 # Findings from NMF isolation-mode benchmarking
 
-**Verified against:** `origin/v5.1` @ `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
-(fresh clone, 2026-09-15 — same tip the source project's own findings were
-verified against, `v5.1` hadn't moved). Every source citation below and in
-`findings/NN-*/` refers to this exact commit.
+**Verified against:** the NMF 5.1 release, tag `release-5.1` @
+`3b5920c85185ff55e98a08aaa48b60c1f77bcdc5` (2026-10-06). Upstream's
+`master` @ `126d4379d73703a56848170e4c070c068ef0e424` ("Release 5.1 (#193)")
+is a squash of that tag with a byte-identical tree, so the line numbers
+hold for either. Every source citation below and in `findings/NN-*/` refers
+to this exact tree. All 9 findings were first live-reproduced on the
+pre-release `v5.1` tip `0933302` (2026-09-15) and re-run live on this release.
+
+**Also live-reproduced, all 9, on `v6.0`** @
+`5cc91528a92e4ad37d20271f4ee4d734c8209aa4` (the in-development 6.0 branch,
+2026-10-06). None of its commits touch the code behind these findings. The
+one move that affects citations: `nmf-package-lib` was merged into
+`nmf-services-impl`, so on `v6.0` the `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/...`
+files below live under `core/nmf-services-impl/src/main/java/esa/mo/nmf/nmfpackage/...`.
+Their line numbers are unchanged.
 
 This repo is a **testbed**: each finding below is reproduced live and
 independently under `findings/NN-*/`, with setup steps in `docs/SETUP.md`
@@ -75,7 +86,7 @@ submission.
 - `NMFPackageManager.java:833-834` — `generateUsername()`'s definition
 - `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java:214` — where that guard is invoked at the real install-service entry point
 - `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackagePMBackend.java:169-189` — `checkPackageIntegrity()`, the integrity-check stub — live code, unconditionally `return true` (it's the *signing* code it would call into that's commented out, see below)
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageBuilder.java:164-192` — the commented-out package-signing block itself
+- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageBuilder.java:171-199` — the commented-out package-signing block itself
 
 **Verification:** live-reproduced.
 
@@ -165,8 +176,8 @@ silently to the weakest of the four modes, with nothing in the boot log to
 distinguish that from an intentional `none` configuration.
 
 **Where:**
-- `core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java:108-115` — writes `config.properties`, with `apps-isolation` set at line 109
-- `BootloaderGenerator.java:121-124` — the checksum manifest is written only for the jar directories, never for `config.properties`
+- `core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java:120-127` — writes `config.properties`, with `apps-isolation` set at line 121
+- `BootloaderGenerator.java:133-136` — the checksum manifest is written only for the jar directories, never for `config.properties`
 - `core/nmf-linux-maven-plugin/src/main/resources/start_supervisor.sh:89` — the boot-time check, readable but not validated:
   ```sh
   if [ -r "$CONFIG_FILE" ]; then
@@ -371,7 +382,7 @@ it onto one of those three directories.
 ## 8. PackageManagement and AppsLauncher key the same App by two different names
 
 `findPackage`/`install` (PackageManagement) key off the package's
-**filename** (e.g. `hello-world-5.0.nmfpack`); `listApp`/`runApp`
+**filename** (e.g. `hello-world-5.1.nmfpack`); `listApp`/`runApp`
 (AppsLauncher) key off the **App name** from the package's own metadata
 (`info.name`, e.g. `hello-world`) — usually not the same string.
 

@@ -66,4 +66,20 @@ match.**
   bug itself (finding 9's core claim) is fully confirmed; only the
   suggested workaround's *portability* is now known to be host-specific,
   worth a one-line caveat if this goes back to César.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- The core bug is identical on both refs. The sibling `docker run` exits
+  `125`, and a manual re-run inside the Supervisor container gives the same
+  "mounts denied: The path /nanosat-mo-framework is not shared from the host
+  and is not known to Docker." error.
+- The bind-mount workaround test (macOS + Docker Desktop specific, see
+  above) was not repeated this round.

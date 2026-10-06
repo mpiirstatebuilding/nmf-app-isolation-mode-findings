@@ -23,7 +23,8 @@ suggested fix. Nothing below restates that — see `docs/MIGRATION_TO_TESTBED.md
 Fixtures used: `fixtures/hello-world-package-b/` in this directory (package
 B — `info.name=hello-world`, `info.version=5.2-TEST`, distinct main class/
 content). Package A is the SDK's own `hello-world-simple` example,
-unmodified (`info.version=5.1-SNAPSHOT`).
+unmodified (its `info.version` is the NMF version it was built from, e.g.
+`5.1`).
 
 ## Observed
 
@@ -66,7 +67,33 @@ unmodified (`info.version=5.1-SNAPSHOT`).
   (as opposed to same name, same developer doing a version bump) changes
   anything — the install path has no such concept regardless, so this
   wasn't expected to matter and didn't.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
 - Environment: `docker/linux-userspace/` image (see that Dockerfile's own
   comments for the nmf-admin-home and networking notes), consumer run as a
   peer container on the same Docker bridge network per `docs/SETUP.md`.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- On both refs, the same results as before:
+  - one `app-hello-world` entry (`101:102`) before and after package B
+  - both jars left in `apps/hello-world/`
+  - `start_app.sh` switched to
+    `MAIN_CLASS=esa.mo.nmf.apps.DemoHelloWorldSimpleV2` /
+    `JAR_APP=hello-world-5.2-TEST.jar`
+  - "Package successfully installed" logged twice, and no error reached the
+    caller
+- Package A is now `hello-world-5.1.nmfpack` or
+  `hello-world-6.0-SNAPSHOT.nmfpack`, matching its build.
+- **Sharper on v6.0:** package B's `5.2-TEST` is *lower* than the installed
+  `6.0-SNAPSHOT`, and it still took over. So there is no version-ordering
+  check either, not just no name check.
+- One log difference is covered in finding 6's section: "The permissions of
+  the User Home directory could not be set" is now logged on *both*
+  installs, not just the second.

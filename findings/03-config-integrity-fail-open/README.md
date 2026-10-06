@@ -100,4 +100,22 @@ default intercepts it first, discovered live.
   "s/^$1=//p" "$2" | head -n 1 | tr -d '\r'`) treats a merely-whitespace
   value (e.g. `apps-isolation= `) the same as fully empty — plausible it
   would, not confirmed.
-- Upstream SHA (per root README.md "Verified against"): `09333029773c1eac7b43e9f1ac841c1fe2ff8e86`
+- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
+  tip). The current pin is the root `README.md` "Verified against" line.
+
+## Re-verified 2026-10-06: 5.1 release and v6.0
+
+**Result: CONFIRMED on both**, live, same steps and environment as above.
+The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
+"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
+against each version (`docs/SETUP.md`). Raw Supervisor logs are in
+`results/reverify-2026-10/`, which is not committed.
+
+- **Test A** (`totally-bogus-mode`), identical on both refs:
+  - the JVM got `appsIsolation=totally-bogus-mode`
+  - the launcher was plain `[/bin/sh, -c, ...]`
+  - no `app-hello-world` account was created
+  - the App ran as `nmf-admin`
+- **Test B** (empty value), identical on both refs: the JVM got
+  `appsIsolation=none`, with the same no-isolation outcome.
+- In both tests, the boot log has no line mentioning the isolation value.
