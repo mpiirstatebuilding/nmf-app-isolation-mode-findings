@@ -75,15 +75,16 @@ against each version (`docs/SETUP.md`). Raw Supervisor logs are in
   `AppStorage.mkDirAndSetPermissions` → `/nonexistent/.nmf-apps` chain,
   reached via `OneInstanceLock`. Before that, the log shows a failed write
   of `/nonexistent/.mo-services/providerURIs.properties`.
-- **Delta from the 2026-09-15 run:** the originally predicted signature now
-  *does* appear, on every install, at account creation:
+- **Correction to the 2026-09-15 write-up above:** the originally predicted
+  signature *does* appear, on every install, at account creation:
   ```
   INFO: The permissions of the User Home directory could not be set for username: app-hello-world
    >> sudo chgrp --recursive nmf-admin /nonexistent
   chgrp: cannot access '/nonexistent': No such file or directory
   ```
-  The September run recorded this as absent for the first install. The cause
-  of the difference wasn't determined. `NMFPackageManager`,
-  `LinuxUsersGroups`, `AppStorage` and `OneInstanceLock` are unchanged
-  between `0933302` and `release-5.1`. Either way, the root `README.md` §6
-  note that the signature varies still covers it.
+  The September run recorded this as absent. Re-running the September
+  image itself (`nmf-testbed-linux-userspace:latest`, built 2026-09-15,
+  `jars-nmf/5.1-SNAPSHOT`) shows the same three lines on its first install.
+  So the September write-up missed the line; the behavior hasn't changed
+  between versions. Root `README.md` §6 is updated to describe both
+  symptoms.

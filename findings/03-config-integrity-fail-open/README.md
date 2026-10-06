@@ -4,11 +4,8 @@
 suggested fix. Nothing below restates that.
 
 **Severity (per source):** High. **Was source-reviewed only in the source
-project; now live-confirmed by this testbed** (see Observed below) — the
-root `README.md`'s own "Source-reviewed" verification column reflects what
-was already sent to César and is intentionally left as-is (that file is a
-verbatim copy of the outreach doc, not adapted here); this file is where
-the update lives.
+project; now live-confirmed by this testbed** (see Observed below). The
+root `README.md` table was updated to "Live-reproduced" in `01eab4e`.
 **Classification:** none special, but was new live work.
 
 ## Reproduction steps

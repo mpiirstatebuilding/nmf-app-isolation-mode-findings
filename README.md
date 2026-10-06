@@ -5,10 +5,12 @@
 `master` @ `126d4379d73703a56848170e4c070c068ef0e424` ("Release 5.1 (#193)")
 is a squash of that tag with a byte-identical tree, so the line numbers
 hold for either. Every source citation below and in `findings/NN-*/` refers
-to this exact tree. All 9 findings were first live-reproduced on the
-pre-release `v5.1` tip `0933302` (2026-09-15) and re-run live on this release.
+to this exact tree. All 9 findings were first checked live on the
+pre-release `v5.1` tip `0933302` (2026-09-15) and re-run live on this release
+(finding 5 via its captured launch command, no fork bomb, per its
+"Source-reviewed" status in the table below).
 
-**Also live-reproduced, all 9, on `v6.0`** @
+**Also re-run live, all 9, on `v6.0`, with the same results** @
 `5cc91528a92e4ad37d20271f4ee4d734c8209aa4` (the in-development 6.0 branch,
 2026-10-06). None of its commits touch the code behind these findings. The
 one move that affects citations: `nmf-package-lib` was merged into
@@ -334,17 +336,16 @@ specific to any one image or deployment.
 
 **Verification:** live-reproduced (re-confirmed independently in a
 separate testbed repo — see its `findings/06-adduser-no-home/README.md`).
-Worth noting: the exact log signature observed there differed from below
-— the failure surfaced inside the App's own `AppStorage` initialization
-rather than as a `chgrp` error at account-creation time itself, depending
-on exactly which downstream operation touches the missing home directory
-first. Same root cause, same impact (App fails to launch) either way.
+Both symptoms appear, in order. At account creation, the Supervisor logs
+`chgrp: cannot access '/nonexistent': No such file or directory`, from
+`NMFPackageManager`'s broad catch, and the install still succeeds. At
+launch, the App itself crashes in its `AppStorage` initialization, because
+it tries to create directories under `/nonexistent`.
 
 **How to replicate:** select `linux-userspace` on a Debian-based image and
 install any App. Account creation logs a `chgrp: cannot access
-'/nonexistent': No such file or directory` failure **or an equivalent
-downstream failure touching the same missing home directory** (both
-confirmed live), and the App fails to launch either way.
+'/nonexistent': No such file or directory` failure, and the App then fails
+to launch with a `NoSuchFileException` under `/nonexistent/.nmf-apps/`.
 
 **Suggested fix:** pass `--home /home/<username>` (or equivalent)
 explicitly in both branches, rather than relying on each platform's

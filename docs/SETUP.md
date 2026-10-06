@@ -26,6 +26,9 @@ puts `5.1` and `6.0-SNAPSHOT` side by side in `~/.m2`. v6.0 needs JDK 21+.
 **Match the tooling to the Supervisor's NMF version.** The NMF major
 version is also the MO area version, and a provider rejects other area
 versions, so a 5.x-built `RunAppTrigger` cannot drive a 6.0 Supervisor.
+This was observed 2026-10-06: the Supervisor logs `Unsupported Area ...
+(51, 5)`, and the client gets back an MO error wrapping a
+`NullPointerException`.
 `tools/set-nmf-version.sh <version>` (`5.1`, the committed default, or
 `6.0-SNAPSHOT`) points `tools/runapp-trigger/` and every
 `findings/*/fixtures/` module at one version. Then rebuild each module with

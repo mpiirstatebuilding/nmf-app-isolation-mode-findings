@@ -94,6 +94,8 @@ against each version (`docs/SETUP.md`). Raw Supervisor logs are in
 - **Sharper on v6.0:** package B's `5.2-TEST` is *lower* than the installed
   `6.0-SNAPSHOT`, and it still took over. So there is no version-ordering
   check either, not just no name check.
-- One log difference is covered in finding 6's section: "The permissions of
-  the User Home directory could not be set" is now logged on *both*
-  installs, not just the second.
+- Correction to the September write-up, explained in finding 6's
+  section: "The permissions of the User Home directory could not be set" is
+  logged on *both* installs, not just the second. Re-running the September
+  image shows the same, so the earlier write-up was incomplete; the
+  behavior didn't change between versions.
