@@ -13,7 +13,7 @@
 # README for the exact denial before this flag was added).
 #
 #   docker build -f docker/bubblewrap/Dockerfile \
-#     -t nmf-testbed-bubblewrap \
+#     -t nmf-testbed-bubblewrap:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
 #   docker run -d --security-opt seccomp=unconfined nmf-testbed-bubblewrap
 

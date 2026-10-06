@@ -18,7 +18,7 @@
 # see the finding's own README for the exact commands.
 #
 #   docker build -f docker/linux-userspace/Dockerfile \
-#     -t nmf-testbed-linux-userspace \
+#     -t nmf-testbed-linux-userspace:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
 
 FROM eclipse-temurin:21-jre

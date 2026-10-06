@@ -16,7 +16,7 @@
   <parent>
     <groupId>int.esa.nmf</groupId>
     <artifactId>nanosat-mo-framework</artifactId>
-    <version>5.1-SNAPSHOT</version>
+    <version>5.1</version>
     <!-- Relative path empty: resolved from local Maven repo after `mvn install`
          on the root nanosat-mo-framework pom. -->
     <relativePath/>

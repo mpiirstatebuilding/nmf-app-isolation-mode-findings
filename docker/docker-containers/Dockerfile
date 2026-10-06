@@ -16,7 +16,7 @@
 # would need a non-root account anyway).
 #
 #   docker build -f docker/docker-containers/Dockerfile \
-#     -t nmf-testbed-docker-containers \
+#     -t nmf-testbed-docker-containers:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
 
 FROM eclipse-temurin:21-jre
