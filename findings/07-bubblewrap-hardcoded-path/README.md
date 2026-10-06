@@ -58,4 +58,8 @@ against each version (`docs/SETUP.md`). Raw Supervisor logs are in
   found`, and the sidecar `.exit` file holds `127`.
 - Recorded more precisely than before: the Supervisor logs this same run as
   `process exited with code 0, classified as EXITED`. So the launch failure
-  is reported to the operator as a clean exit.
+  is reported to the operator as a clean exit. Traced to `/dev/null` not
+  being writable inside the sandbox, which defeats `start_app.sh`'s
+  exit-code re-export. It affects every App failure under bubblewrap, not
+  just this one; root `README.md` §7b has the details. Logs:
+  `results/reverify-2026-10/*-bubblewrap-exitcode-masking.supervisor.log`.
