@@ -1,60 +1,67 @@
 # Findings from NMF isolation-mode benchmarking
 
+Ten bugs and gaps in how NMF isolates Apps, found while benchmarking its
+four `appsIsolation` modes. Each one is reproduced live in this repo.
+
+| # | Finding | Severity | Scope | Verification |
+|---|---|---|---|---|
+| 1 | `linux-userspace` account/identity takeover via a same-named, different-version package | High | App-vs-App | Live-reproduced |
+| 2 | Unsanitized package name → path traversal on install | High | Any deployment | Live-reproduced |
+| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Any deployment | Live-reproduced |
+| 4 | bubblewrap `--ro-bind / /`, no seccomp/AppArmor/cap-drop | High | App-vs-host | Live-reproduced |
+| 5 | `docker-containers` sets no `--pids-limit` on the sibling App container | High | App-vs-host | Source-reviewed |
+| 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Any deployment | Live-reproduced |
+| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override | Medium | Any deployment | Live-reproduced |
+| 8 | PackageManagement/AppsLauncher key the same App by two different names | Minor (UX) | Not isolation | Live-reproduced |
+| 9 | `docker-containers` sibling-mount host-path precondition is undocumented | Doc gap | Not isolation | Live-reproduced |
+| 10 | bubblewrap: every App failure is reported as exit 0 / `EXITED` | Medium | Any deployment | Live-reproduced |
+
+**Scope** says who should care:
+
+- **App-vs-App** (1): needs two Apps colliding on the same declared name.
+  It's moot for a single-org mission where one trusted party submits every
+  App.
+- **App-vs-host** (4, 5): a single App reaches beyond its own sandbox into
+  the host filesystem or its resources, however many organizations submit
+  Apps.
+- **Any deployment** (2, 3, 6, 7, 10): Supervisor-level or functional
+  bugs that apply to any deployment shape, not just a multi-tenant one.
+- **Not isolation** (8, 9): a UX issue and a documentation gap.
+
+Findings 1–9 are ordered by how severe and reachable we think each one is,
+most important first. Finding 10 was found later and is appended rather
+than renumbering the rest. We'd rank it alongside finding 7.
+
+This repo is a **testbed**. Each finding's reproduction attempt and
+observed result is in `findings/NN-*/`. Shared setup steps are in
+`docs/SETUP.md`, and the trigger tooling is in `tools/runapp-trigger/`.
+`docs/MIGRATION_TO_TESTBED.md` records how the repo was assembled, and
+`docs/PROVENANCE.md` covers two related findings that aren't included.
+
+## Versions tested
+
 **Verified against:** the NMF 5.1 release, tag `release-5.1` @
 `3b5920c85185ff55e98a08aaa48b60c1f77bcdc5` (2026-10-06). Upstream's
 `master` @ `126d4379d73703a56848170e4c070c068ef0e424` ("Release 5.1 (#193)")
 is a squash of that tag with a byte-identical tree, so the line numbers
 hold for either. Every source citation below and in `findings/NN-*/` refers
-to this exact tree. Findings 1–9 were first checked live on the
-pre-release `v5.1` tip `0933302` (2026-09-15) and re-run live on this release
-(finding 5 via its captured launch command, no fork bomb, per its
-"Source-reviewed" status in the table below).
+to this exact tree.
 
-Finding 10 was found during that re-run and is live-reproduced on this
-release.
+- Findings 1–9 were first checked live on the pre-release `v5.1` tip
+  `0933302` (2026-09-15), then re-run live on this release. Finding 5 was
+  re-run via its captured launch command, with no fork bomb, per its
+  "Source-reviewed" status.
+- Finding 10 was found during that re-run and is live-reproduced on this
+  release.
 
 **Also re-run live, all 10, on `v6.0`, with the same results** @
 `5cc91528a92e4ad37d20271f4ee4d734c8209aa4` (the in-development 6.0 branch,
-2026-10-06). None of its commits touch the code behind these findings. The
-one move that affects citations: `nmf-package-lib` was merged into
-`nmf-services-impl`, so on `v6.0` the `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/...`
-files below live under `core/nmf-services-impl/src/main/java/esa/mo/nmf/nmfpackage/...`.
+2026-10-06). None of its commits touch the code behind these findings. One
+move affects citations: `nmf-package-lib` was merged into
+`nmf-services-impl`. So on `v6.0`, the
+`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/...` files below
+live under `core/nmf-services-impl/src/main/java/esa/mo/nmf/nmfpackage/...`.
 Their line numbers are unchanged.
-
-This repo is a **testbed**: each finding below is reproduced live and
-independently under `findings/NN-*/`, with setup steps in `docs/SETUP.md`
-and the migrated trigger tooling in `tools/runapp-trigger/`. See
-`docs/MIGRATION_TO_TESTBED.md` for how this was assembled and
-`docs/PROVENANCE.md` for two related-but-not-included findings.
-
-Findings 1–9 are ordered by how severe/reachable we think each one is,
-most important first. Finding 10 was found later and is appended rather
-than renumbering the rest; we'd rank it alongside finding 7.
-
-Only finding 1 is specifically an App-vs-App concern — it requires two
-Apps colliding on the same declared name, so it's moot for a single-org
-mission where one trusted party submits every App. Findings 4 and 5 are
-App-vs-host, not App-vs-App: they let a single App reach beyond its own
-sandbox into the host filesystem or its resources, which matters
-regardless of how many organizations submit Apps. Findings 2, 3, 6, 7, and 10
-are Supervisor-level or functional bugs — an unsanitized-name path
-traversal, a fail-open boot config, a broken account-creation flow, a
-hardcoded PATH, and App failures reported as clean exits — that apply to any deployment shape, not just our own
-multi-tenant one. Findings 8 and 9 aren't isolation issues and apply
-either way.
-
-| # | Finding | Severity | Verification |
-|---|---|---|---|
-| 1 | `linux-userspace` account/identity takeover via a same-named, different-version package | High | Live-reproduced |
-| 2 | Unsanitized package name → path traversal on install | High | Live-reproduced |
-| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Live-reproduced |
-| 4 | bubblewrap `--ro-bind / /`, no seccomp/AppArmor/cap-drop | High | Live-reproduced |
-| 5 | `docker-containers` sets no `--pids-limit` on the sibling App container | High | Source-reviewed |
-| 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Live-reproduced |
-| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override | Medium | Live-reproduced |
-| 8 | PackageManagement/AppsLauncher key the same App by two different names | Minor (UX) | Live-reproduced |
-| 9 | `docker-containers` sibling-mount host-path precondition is undocumented | Doc gap | Live-reproduced |
-| 10 | bubblewrap: every App failure is reported as exit 0 / `EXITED` | Medium | Live-reproduced |
 
 ## 1. `linux-userspace`: a same-named package with a different version silently takes over another App's account and files
 
@@ -65,17 +72,23 @@ developer — that claimed it before. The one guard that looks like it should
 catch this only blocks an *exact* name-and-version match (it exists to let
 a `SNAPSHOT` rebuild override itself); a second, unrelated package that
 declares the same name with any different version sails straight through
-it. The second install reuses the first App's existing Linux account
-(same uid/gid) and silently overwrites its installed files and start
-script in place — no error, no operator-visible warning, "Package
-successfully installed" logged both times. It doesn't even need a
+it. There's no version-ordering check either: on `v6.0`, a package
+declaring a *lower* version than the installed one still took over.
+
+The second install reuses the first App's existing Linux account (same
+uid/gid) and writes its files into the same App directory. The first
+package's jar is left in place, but `start_app.sh`, `transport.properties`
+and `provider.properties` are regenerated to point at the second package,
+so the App now launches the second package's code. There's no error and
+no operator-visible warning, and "Package successfully installed" is
+logged both times. It doesn't even need a
 deliberately crafted attack — two developers picking the same App name by
 coincidence would trigger it.
 
 **Impact:** under `linux-userspace`, any actor able to get a package
 installed can take over an already-installed App belonging to a different
-developer or organization — same uid/gid, files and start script silently
-overwritten in place. This is a full identity/account takeover, not just a
+developer or organization: same uid/gid, same App directory, and a start
+script silently switched to the new package. This is a full identity/account takeover, not just a
 shared-resource leak, and requires no privilege beyond ordinary package
 submission.
 
@@ -105,9 +118,10 @@ packages that both declare `info.name=shared-name` in their
 different content (e.g. different `pack.app.mainclass`). Install the first,
 confirm the `app-shared-name` Linux account and its `apps/shared-name/`
 directory now exist with the first package's content. Install the second.
-Check `/etc/passwd` — still exactly one `app-shared-name` entry — and
-`apps/shared-name/` — now holding the second package's files and start
-script, with no error surfaced during either install.
+Check `/etc/passwd`: there's still exactly one `app-shared-name` entry.
+Check `apps/shared-name/`: it now holds both packages' jars, and its
+`start_app.sh` points at the second package's main class and jar. Neither
+install surfaced an error.
 
 **Suggested fix:** before creating the OS account or writing into the App
 directory, check whether a package with this name already exists
@@ -134,7 +148,9 @@ equally attacker-controlled field.
 
 **Impact:** any developer able to submit a package can set `info.name` to
 something like `../../outside-target/pwned-app`, and `install()` will
-write real files outside the intended install directories. This is a
+create directories and attempt file writes outside the intended install
+directories. Some of those writes fail, but the caller is still told the
+install succeeded. This is a
 Supervisor-level gap — it applies before any `appsIsolation` mode takes
 effect, so it undermines filesystem boundaries regardless of which
 isolation mode is active.
@@ -155,12 +171,28 @@ isolation mode is active.
 
 **How to replicate:** build a package whose `package-metadata.properties`
 declares `info.name=../../outside-target/pwned-app` (metadata otherwise
-valid, no files need to be included). Install it against a scratch NMF
-root. A receipt file lands one level outside the installations-tracker
-directory, at `<nmf-root>/outside-target/pwned-app.receipt`, with a clean
-"Package successfully installed" log line and no exception. (An absolute
-path in `info.name` doesn't escape further in our testing — only the
-relative `..`-traversal form does.)
+valid, and its zip entries themselves non-traversing, since those are
+separately guarded). Install it against a scratch NMF root. Then:
+
+- The App's log directory is created outside `logs/`, at
+  `<nmf-root>/logs/outside-target/pwned-app/`
+  (`NMFPackageManager.java:150-151`).
+- The receipt write targets
+  `etc/installations-tracker/../../outside-target/pwned-app.receipt`. In
+  our runs it failed with a `FileNotFoundException` that `install()`'s
+  broad catch logged as `SEVERE`.
+- The App's aux files (`start_app.sh` and the `.properties` files) are
+  logged as "Creating file on: .../apps/../../outside-target/pwned-app/..."
+  but never written, because `AuxFilesGenerator.writeFile()` silently
+  swallows the `IOException`.
+- The installing client still gets a success response ("Package ...
+  installed.").
+
+So the traversal reaches outside the intended directories, and a
+half-failed install is reported as a success. Full trace in
+`findings/02-path-traversal-install/README.md`. (An absolute path in
+`info.name` doesn't escape further in our testing. Only the relative
+`..`-traversal form does.)
 
 **Suggested fix:** apply the same traversal check already used for
 in-package file entries to the package name itself, at the point it's read
@@ -193,23 +225,22 @@ distinguish that from an intentional `none` configuration.
 - `core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java:57-59` — `getCurrent()`, defaults to `NONE` on anything unset/unrecognized
 - `AppsIsolationMode.java:76-95` — `isLinuxUserspace()`/`isDockerContainers()`/`isBubblewrap()`, each an exact-string match against the unvalidated value
 
-**Verification:** live-reproduced (upgraded from source-reviewed — a
-separate testbed repo booted a real Supervisor against two independently
-corrupted `apps-isolation` values; full evidence in that repo's
-`findings/03-config-integrity-fail-open/README.md`).
+**Verification:** live-reproduced, upgraded from source-reviewed. This
+testbed booted a real Supervisor against two separately corrupted
+`apps-isolation` values. Full evidence is in
+`findings/03-config-integrity-fail-open/README.md`.
 
 - An unrecognized non-empty value (e.g. `totally-bogus-mode`) fails open
-  exactly as described above: the boot log gives no indication of a
+  exactly as described above. The boot log gives no indication of a
   problem, no App-specific Linux account gets created, and the App
   process runs directly as the Supervisor's own account.
-- An **empty** value fails open too, but via a different, earlier
-  mechanism this section didn't originally account for:
-  `start_supervisor.sh` itself has a hardcoded `apps-isolation=none`
-  fallback that silently wins whenever the config value is empty, before
-  the JVM — and this section's `AppsIsolationMode` fallback — is ever
-  reached. Worth knowing before treating the suggested fix below as
-  sufficient: **it would need to apply in both places**, not just inside
-  `AppsIsolationMode`, to fully close the empty-value case too.
+- An **empty** value fails open too, but through a different, earlier
+  mechanism. `start_supervisor.sh` has a hardcoded `apps-isolation=none`
+  default that silently wins whenever the config value is empty. This
+  happens before the JVM starts, so the `AppsIsolationMode` fallback is
+  never reached. The suggested fix below **would need to apply in both
+  places**, not just inside `AppsIsolationMode`, to close the empty-value
+  case too.
 
 **How to replicate:** generate a filesystem with any real
 `appsIsolation` mode, then edit `bootloader/config.properties` to set
@@ -295,18 +326,16 @@ this container boundary would stop one.
   ret.add(nmfHome + ":" + nmfHome);
   ```
 
-**Verification:** source-reviewed; the flag list itself has since been
-independently re-confirmed live in a separate testbed repo (an actual
-constructed `docker run` command captured straight from the Supervisor's
-own log, not just read from source — see that repo's
-`findings/05-docker-no-pids-limit/README.md`). Still not live-confirmed in
-the sense that matters most, in either project: no live fork bomb has
-been run against this container. Our own benchmark harness declines to
-run one against this specific mode+scope combination for exactly this
-reason — no `--pids-limit` to bound it against — and reports an
-inconclusive result instead of attempting one. So we've confirmed nothing
-would stop a resource-exhausting payload here, but we haven't watched one
-run unbounded in this container ourselves.
+**Verification:** source-reviewed. The constructed `docker run` command
+was also captured live from the Supervisor's own log, and it has none of
+these flags (see `findings/05-docker-no-pids-limit/README.md`).
+
+No fork bomb has been run against this container, so the impact itself
+isn't live-confirmed. The source benchmarking project (`nanosats-framework`)
+deliberately declines to run one in this mode, because there's no
+`--pids-limit` to bound it, and reports an inconclusive result instead.
+So we've confirmed nothing would stop a resource-exhausting payload here,
+but we haven't watched one run unbounded.
 
 **How to replicate:** inspect the `docker run` flag list `assembleCommand()`
 builds for the sibling container — no `--pids-limit`/`--memory`/`--cpus`
@@ -340,8 +369,8 @@ specific to any one image or deployment.
       username};
   ```
 
-**Verification:** live-reproduced (re-confirmed independently in a
-separate testbed repo — see its `findings/06-adduser-no-home/README.md`).
+**Verification:** live-reproduced (see
+`findings/06-adduser-no-home/README.md`).
 Both symptoms appear, in order. At account creation, the Supervisor logs
 `chgrp: cannot access '/nonexistent': No such file or directory`, from
 `NMFPackageManager`'s broad catch, and the install still succeeds. At
@@ -451,18 +480,16 @@ traced back to this.
   ret.add(nmfHome + ":" + nmfHome);
   ```
 
-**Verification:** live-reproduced; a harness-side workaround (bind-mounting
-our generated filesystem at a host path that satisfies the precondition,
-no NMF code change) is also confirmed live **in this project's own
-environment.** A separate testbed repo re-tested both the bug and the
-workaround specifically on macOS + Docker Desktop: the bug reproduces
-byte-for-byte (identical error message), but the workaround does **not**
-resolve it there — traced to Docker Desktop's own, separate File Sharing
-allowlist, layered on top of the generic bind-mount precondition described
-above (full trace in that repo's
-`findings/09-docker-sibling-mount-hostpath/README.md`). The underlying bug
-is confirmed regardless of host; only the workaround's portability across
-hosts turned out to be limited.
+**Verification:** live-reproduced in the source benchmarking project,
+and again in this testbed on macOS + Docker Desktop with the identical
+error message.
+
+The workaround is to bind-mount the generated filesystem from a host path
+that satisfies the precondition, with no NMF code change. It works on the
+Linux host used by the source benchmarking project (`nanosats-framework`).
+It does **not** work on Docker Desktop, which has its own File Sharing
+allowlist on top of this precondition. Full trace in
+`findings/09-docker-sibling-mount-hostpath/README.md`.
 
 **How to replicate:** deploy the Supervisor's own filesystem via `COPY` at
 image-build time rather than a host bind mount (i.e. give the container's
