@@ -9,7 +9,7 @@ doesn't read as an oversight:
 - **Internal #1 — bubblewrap App storage-bind crash.** Already fixed and
   merged upstream as
   [PR #192](https://github.com/esa/nanosat-mo-framework/pull/192). Not one
-  of the 9 findings this testbed reproduces, but the fix is what makes
+  of the findings in the root `README.md`, but the fix is what makes
   live app-scope verification under `bubblewrap` possible at all (relevant
   background for finding 4's Track B setup — see `docs/SETUP.md`) and is
   useful context on prior good-faith collaboration with César when opening
@@ -17,7 +17,7 @@ doesn't read as an oversight:
 - **Internal #7 — `linux-userspace` Apps observed with `gid=0`.**
   **Retracted.** Confirmed to be a harness bug (a process-matching bug in
   the source project's own benchmarking script), not an NMF behavior. Not
-  one of the 9, and should not be resurrected as a claim against NMF.
+  one of the findings in the root `README.md`, and should not be resurrected as a claim against NMF.
 
 No other internal-log content is carried into this repo — see
 `docs/MIGRATION_TO_TESTBED.md` section 3 for the full internal-to-outreach
@@ -41,7 +41,7 @@ than a fuller migration.
   hit, before any App is even installed. Worked around at the
   infrastructure level in `docker/linux-userspace/Dockerfile` (explicit
   `usermod -d`) so the testbed's own findings could proceed — not one of
-  the 9 findings sent to César, and not yet decided whether it's worth
+  the findings sent to César, and not yet decided whether it's worth
   reporting to him. **Flagged here for Mari's call, not decided
   unilaterally** — see `findings/06-adduser-no-home/README.md`'s Observed
   section for the full live evidence.

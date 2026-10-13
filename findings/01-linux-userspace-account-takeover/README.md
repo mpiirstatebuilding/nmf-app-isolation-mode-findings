@@ -1,8 +1,7 @@
 # Finding 1 — `linux-userspace` account/identity takeover via same-name, different-version package
 
 **Source of truth:** root `README.md` §1 for full impact, source citations, and
-suggested fix. Nothing below restates that — see `docs/MIGRATION_TO_TESTBED.md`
-§3 on why.
+suggested fix. Nothing below restates that.
 
 **Severity (per source):** High, live-reproduced.
 **Classification:** fully scriptable, no special base image.
@@ -10,7 +9,7 @@ suggested fix. Nothing below restates that — see `docs/MIGRATION_TO_TESTBED.md
 
 ## Reproduction steps
 
-1. Generate a `linux-userspace`-mode filesystem (`docs/MIGRATION_TO_TESTBED.md` §5.4).
+1. Generate a `linux-userspace`-mode filesystem (`docs/SETUP.md` "Generating a mode's filesystem").
 2. Build two `.nmfpack` packages with identical `info.name` but different
    `info.version` and different content (e.g. different `pack.app.mainclass`).
 3. Install the first. Confirm its dedicated Linux account (`app-<name>`) and
@@ -44,8 +43,9 @@ unmodified (its `info.version` is the NMF version it was built from, e.g.
   app-hello-world` was run **again** for the same name, followed immediately
   by a caught-and-logged exception: `The permissions of the User Home
   directory could not be set for username: app-hello-world` (this is the
-  broad log-only catch the source `README.md` cites at
-  `NMFPackageManager.java:195-198`) — install proceeded anyway.
+  broad log-only catch the root `README.md` cites at
+  `NMFPackageManager.java:195-198`) — install proceeded anyway. (Corrected
+  below: this line is logged on *both* installs, not just the second.)
   "Package successfully installed in 104 ms" logged, no error surfaced to
   the caller either way.
 - **After package B's install:** `/etc/passwd` still showed exactly **one**
@@ -53,9 +53,7 @@ unmodified (its `info.version` is the NMF version it was built from, e.g.
   reuse, not a second account. `apps/hello-world/` now held **both** jars
   (`hello-world-5.1-SNAPSHOT.jar`, still there from before, **and**
   `hello-world-5.2-TEST.jar`, newly added) — confirmed against the
-  pre-install-B listing above, not inferred. This is a nuance worth
-  recording precisely rather than restating the source `README.md`'s
-  "silently overwrites in place" wording verbatim: the old jar is not
+  pre-install-B listing above, not inferred. So the old jar is not
   deleted, but `start_app.sh`/`transport.properties`/`provider.properties`
   **are** regenerated on every install and point at whichever package
   installed most recently, so the App's actual launch target silently

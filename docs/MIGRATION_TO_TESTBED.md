@@ -1,5 +1,14 @@
 # Migrating this repo's work into the testbed repo
 
+> **Status: completed, historical.** This runbook was carried out in
+> September 2026 and is kept as a record of the migration decisions. Since
+> then:
+> - The canonical findings are the root `README.md`, numbered 1–10 (not
+>   `CESAR_OUTREACH.md`'s 1–9). Finding 10 was added on 2026-10-06.
+> - Current setup procedures are in `docs/SETUP.md`. They supersede this
+>   document's `5.1-SNAPSHOT`/`v5.1` clone steps and its
+>   `maltcp://127.0.0.1` directory URI.
+
 **Audience: a fresh Claude Code instance with no memory of the conversation that produced this document**, opened in (or about to be pointed at) the private GitHub repo already created to share isolation-mode findings with César Coelho (NMF maintainer). That repo's next job is to become a **testbed** that reproduces 9 specific findings live for him, ahead of fix PRs upstream to `github.com/esa/nanosat-mo-framework`.
 
 ## 1. How to use this document
@@ -68,11 +77,7 @@ Every finding below needs a working `nanosat-mo-framework` v5.1 checkout and a p
    - Reuse an existing checkout only after confirming (`git status`/`git diff`) and resetting those two files to pristine.
 2. **Record the checkout's commit once**, immediately after cloning/resetting: `git rev-parse HEAD`. Cite that pinned SHA (not bare `File.java:123`-style line references against a moving branch) in every per-finding source citation below and in anything the testbed repo writes about upstream source. (At the time this document was written, the source project's own findings were verified against tip `093330297` on `v5.1` — a reasonable starting point, but re-pin against your own fresh clone rather than assuming that SHA is still current.)
 3. **One-time build**, at the checkout root: `mvn clean install`. Populates `~/.m2` with `int.esa.nmf:nanosat-mo-framework:5.1-SNAPSHOT` (parent POM) and `nmf-composites` — required both to generate any isolation-mode filesystem and to compile the migrated `RunAppTrigger.java`/`pom.xml`.
-4. **Per-mode filesystem generation** (reused by most findings below), from `<checkout>/nmf-mission-barebone/barebone-space-filesystem`:
-   ```bash
-   mvn package -Pgenerate-filesystem -Dgenerate-filesystem.appsIsolation=<mode>
-   ```
-   where `<mode>` is one of `none`, `linux-userspace`, `bubblewrap`, `docker-containers`.
+4. **Per-mode filesystem generation** (reused by most findings below): now in `docs/SETUP.md` "Generating a mode's filesystem".
 
 ## 6. Target repo layout
 

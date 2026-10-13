@@ -1,41 +1,57 @@
 # Shared setup procedures
 
-Two building blocks used by multiple findings below, adapted from the
-source project's `README.md`. Neither is finding-specific — each
-`findings/NN-*/README.md` links back here rather than restating these
-steps.
+Setup steps used by more than one finding. Each `findings/NN-*/README.md`
+links here rather than restating them.
 
 ## External dependencies
 
-See `docs/MIGRATION_TO_TESTBED.md` section 5 for the one-time
-`nanosat-mo-framework` checkout + `mvn clean install` prerequisite,
-and section 4 for the `tools/runapp-trigger` build (`mvn package` in that
-directory, once the checkout has populated `~/.m2`). That runbook describes
-the original pre-release `v5.1` setup; the current refs and the per-version
-build are below.
-
 **Pinned upstream SHA:** owned by the root `README.md`'s "Verified against"
-line, not restated here — cite that same line from every source citation in
-`findings/NN-*/`. Checkouts live outside this repo, not committed: the
-original clone at `/Users/User/IdeaProjects/nanosat-mo-framework-v5.1`
-(left at the pre-release tip `0933302` for diffing) plus two `git worktree`s
-of it, `../nanosat-mo-framework-5.1-release` (tag `release-5.1`) and
-`../nanosat-mo-framework-v6.0` (branch `v6.0`). `mvn clean install` in each
-puts `5.1` and `6.0-SNAPSHOT` side by side in `~/.m2`. v6.0 needs JDK 21+.
+line, not restated here. Cite that same line from every source citation in
+`findings/NN-*/`.
+
+**Checkouts** live outside this repo and aren't committed:
+
+- the original clone at `/Users/User/IdeaProjects/nanosat-mo-framework-v5.1`,
+  left at the pre-release tip `0933302` for diffing
+- a `git worktree` of it at `../nanosat-mo-framework-5.1-release` (tag
+  `release-5.1`)
+- a `git worktree` of it at `../nanosat-mo-framework-v6.0` (branch `v6.0`)
+
+Run `mvn clean install` in each. That puts `5.1` and `6.0-SNAPSHOT` side
+by side in `~/.m2`. v6.0 needs JDK 21+.
 
 **Match the tooling to the Supervisor's NMF version.** The NMF major
 version is also the MO area version, and a provider rejects other area
-versions, so a 5.x-built `RunAppTrigger` cannot drive a 6.0 Supervisor.
-This was observed 2026-10-06: the Supervisor logs `Unsupported Area ...
+versions. So a 5.x-built `RunAppTrigger` cannot drive a 6.0 Supervisor.
+Observed 2026-10-06: the Supervisor logs `Unsupported Area ...
 (51, 5)`, and the client gets back an MO error wrapping a
 `NullPointerException`.
-`tools/set-nmf-version.sh <version>` (`5.1`, the committed default, or
-`6.0-SNAPSHOT`) points `tools/runapp-trigger/` and every
-`findings/*/fixtures/` module at one version. Then rebuild each module with
-`rm -rf target && mvn -o package`. Delete `target/` explicitly, because a
-failed build leaves the previous version's jar in place. Tag the testbed
-images per version too (e.g. `nmf-testbed-linux-userspace:5.1` / `:6.0`).
-The `docker/*/Dockerfile`s themselves are version-agnostic.
+
+1. Run `tools/set-nmf-version.sh <version>` (`5.1`, the committed default,
+   or `6.0-SNAPSHOT`). It points `tools/runapp-trigger/` and every
+   `findings/*/fixtures/` module at one version.
+2. Rebuild each module with `rm -rf target && mvn -o package`. Delete
+   `target/` explicitly, because a failed build leaves the previous
+   version's jar in place.
+3. Tag the testbed images per version too (e.g.
+   `nmf-testbed-linux-userspace:5.1` / `:6.0`). The `docker/*/Dockerfile`s
+   themselves are version-agnostic.
+
+The original one-time setup for the pre-release `v5.1` is in
+`docs/MIGRATION_TO_TESTBED.md` sections 4 and 5. It's historical; the
+steps above supersede it.
+
+## Generating a mode's filesystem
+
+Most findings need a filesystem generated for one `appsIsolation` mode.
+From `<checkout>/nmf-mission-barebone/barebone-space-filesystem`:
+
+```bash
+mvn package -Pgenerate-filesystem -Dgenerate-filesystem.appsIsolation=<mode>
+```
+
+where `<mode>` is one of `none`, `linux-userspace`, `bubblewrap`,
+`docker-containers`.
 
 ## App-scope setup (needed by findings 1, 2, 6, 8)
 
@@ -71,47 +87,57 @@ Supervisor, not whether `appsIsolation` itself works.
 
 ## Docker networking (containerized Supervisor)
 
-**Confirmed live for `linux-userspace` (2026-09-15) and for `bubblewrap`
-and `docker-containers` too (2026-10-06)**, macOS + Docker Desktop. Each
-mode needs its own container invocation (finding 9 specifically requires
-the Supervisor's filesystem NOT be host-bind-mounted; findings 4/7 need
-`--security-opt seccomp=unconfined` and a bubblewrap-capable host path),
-but the consumer side below is the same for all three.
-**run `RunAppTrigger` (and any consumer) as a container on the same Docker
-network as the Supervisor, and address it by its real bridge IP** (`docker
-inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
-<container>`) — do not try to reach the Supervisor from the macOS host
-directly, and do not force the transport to advertise/bind `127.0.0.1`:
+Every mode in this testbed runs the Supervisor in a container. **Run
+`RunAppTrigger` (and any other consumer) as a container on the same Docker
+network as the Supervisor, and address the Supervisor by its real bridge
+IP.** Get the IP with:
 
-- The Supervisor's default `autohost` behavior advertises its own bridge IP
-  (e.g. `172.17.0.2`) as its provider URI. That's unreachable from the
-  macOS host's own network stack even with `-p 1024:1024` published,
-  because subsequent PackageManagement/AppsLauncher calls dial whatever
-  host:port string the Directory response embeds — not necessarily the
-  same path the initial published-port connection went through.
-- Forcing loopback instead (`-Dorg.ccsds.moims.mo.mal.transport.tcpip.host=127.0.0.1`
-  etc., patched into `start_supervisor.sh`'s JVM invocation) was tried and
-  abandoned: the initial Directory lookup still succeeds, but the
-  subsequent `findPackage`/`install` calls stalled — killed after ~150s
-  with no response, not a diagnosed permanent hang. Suspected cause: the
-  async response path needs the Supervisor container to dial back to the
-  client's own advertised address, and a host-side client's address isn't
-  reachable from inside the container's namespace either — but this wasn't
-  root-caused further once the peer-container approach worked instead.
-- A plain `transport.properties` file dropped into the generated
-  filesystem's root is **not** picked up by `start_supervisor.sh` (it
-  isn't on the JVM's classpath) — don't rely on it; use system properties
-  patched directly into the JVM invocation if a transport property must be
-  forced at all.
-- What works: leave the Supervisor's default `autohost` alone, run the
-  consumer in a container on the same (default bridge) network, e.g.:
-  ```bash
-  docker run --rm \
-    -v /path/to/runapp-trigger-jar-with-dependencies.jar:/work/runapp-trigger.jar:ro \
-    -w /work eclipse-temurin:21-jre \
-    java -jar runapp-trigger.jar maltcp://<supervisor-bridge-ip>:1024/nanosat-mo-supervisor-Directory \
-    hello-world hello-world-5.1.nmfpack
-  ```
+```bash
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' <container>
+```
+
+Leave the Supervisor's default `autohost` alone, and run the consumer on
+the same (default bridge) network, e.g.:
+
+```bash
+docker run --rm \
+  -v /path/to/runapp-trigger-jar-with-dependencies.jar:/work/runapp-trigger.jar:ro \
+  -w /work eclipse-temurin:21-jre \
+  java -jar runapp-trigger.jar maltcp://<supervisor-bridge-ip>:1024/nanosat-mo-supervisor-Directory \
+  hello-world hello-world-5.1.nmfpack
+```
+
+Confirmed live for `linux-userspace` (2026-09-15) and for `bubblewrap` and
+`docker-containers` (2026-10-06), on macOS + Docker Desktop. Each mode
+needs its own Supervisor container invocation, but the consumer side is
+the same for all three:
+
+- finding 9 requires that the Supervisor's filesystem is NOT
+  host-bind-mounted
+- findings 4/7 need `--security-opt seccomp=unconfined` and a
+  bubblewrap-capable host
+
+**Tried and rejected:**
+
+- **Reaching the Supervisor from the macOS host directly.** The
+  Supervisor's `autohost` advertises its bridge IP (e.g. `172.17.0.2`) as
+  its provider URI. That's unreachable from the macOS host's network stack
+  even with `-p 1024:1024` published. Later PackageManagement/AppsLauncher
+  calls dial whatever host:port the Directory response embeds, not
+  necessarily the path the first published-port connection used.
+- **Forcing loopback** (`-Dorg.ccsds.moims.mo.mal.transport.tcpip.host=127.0.0.1`
+  etc., patched into `start_supervisor.sh`'s JVM invocation). The initial
+  Directory lookup still succeeds, but the following `findPackage`/`install`
+  calls stalled. They were killed after ~150s with no response; this
+  wasn't diagnosed as a permanent hang. Suspected cause: the async
+  response path needs the Supervisor container to dial back to the
+  client's advertised address, which a host-side client's address isn't
+  reachable at from inside the container. Not root-caused further once the
+  peer-container approach worked.
+- **A `transport.properties` file in the generated filesystem's root.**
+  `start_supervisor.sh` doesn't pick it up, because it isn't on the JVM's
+  classpath. If a transport property must be forced at all, patch it into
+  the JVM invocation as a system property.
 
 ## Cross-app ("Track B") setup (needed by finding 4)
 

@@ -3,12 +3,13 @@
 **Source of truth:** root `README.md` §5 for full impact, source citations, and
 suggested fix. Nothing below restates that.
 
-**Severity (per source):** High. **Was source-reviewed only; now
-live-confirmed** — not by running a fork bomb (still not attempted, same
-as the source project), but by capturing the actual constructed command
-live rather than relying on reading the source alone. See Observed below.
-**Classification: inspection-only — do not attempt a live fork bomb against
-the sibling container in this testbed either.**
+**Severity (per source):** High, source-reviewed. The constructed command
+was also captured live (see Observed), but no fork bomb was run, so the
+impact itself isn't live-confirmed.
+**Classification: inspection-only. Do not attempt a live fork bomb against
+the sibling container in this testbed.**
+**Setup needed:** `docs/SETUP.md` "App-scope setup", on
+`docker/docker-containers/`.
 
 This is about the **sibling per-App container's own** `docker run`
 invocation (built by `AppsLauncherManagerDocker.assembleCommand()`) — a

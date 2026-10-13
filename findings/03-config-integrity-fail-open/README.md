@@ -3,10 +3,12 @@
 **Source of truth:** root `README.md` §3 for full impact, source citations, and
 suggested fix. Nothing below restates that.
 
-**Severity (per source):** High. **Was source-reviewed only in the source
-project; now live-confirmed by this testbed** (see Observed below). The
-root `README.md` table was updated to "Live-reproduced" in `01eab4e`.
-**Classification:** none special, but was new live work.
+**Severity (per source):** High, live-reproduced. It was source-reviewed
+only in the source project. This testbed was the first to confirm it live,
+and the root `README.md` table was updated in `01eab4e`.
+**Classification:** fully scriptable, mode-independent.
+**Setup needed:** `docs/SETUP.md` "App-scope setup", to launch an App after
+boot.
 
 ## Reproduction steps
 
@@ -20,83 +22,81 @@ root `README.md` table was updated to "Live-reproduced" in `01eab4e`.
 
 **If the actual observed behavior differs from this prediction** (e.g. the
 Supervisor fails to start instead of failing open), that is a genuine
-finding update to report back to César — don't silently adjust the test to
+finding update to report back to César. Don't silently adjust the test to
 match the prediction. Record whatever actually happens in Observed below.
 
 ## Observed
 
-**Result: CONFIRMED, live, 2026-09-15 — this is now live-reproduced, not
-just source-reviewed. Matches the fail-open prediction closely, but via
-two genuinely different mechanisms depending on which corruption is
-tested — both traced to source, both tested independently.**
+**Result: CONFIRMED, live, 2026-09-15.** Both corruptions fail open, as
+predicted, but through two different mechanisms. Both were traced to
+source and tested separately.
 
-Both tests used a filesystem genuinely built for `linux-userspace`
-(`docker/linux-userspace/`, same image as findings 1/6/8, `nmf-admin`
-already has a real home) with only `bootloader/config.properties`'s
-`apps-isolation` line edited afterward — not a fresh `none` build.
+Both tests used a filesystem built for `linux-userspace`
+(`docker/linux-userspace/`, the same image as findings 1/6/8, where
+`nmf-admin` already has a real home). Only the `apps-isolation` line in
+`bootloader/config.properties` was edited afterward. It was not a fresh
+`none` build.
 
-**Test A — unrecognized non-empty value (`apps-isolation=totally-bogus-mode`):**
-this is the code path the source `README.md` actually describes.
-- Boot log: **zero indication of a problem** — `BOOTLOADER CONFIRMATION
-  confirmed after 1s`, identical shape to a normal boot. Confirms the
-  prediction exactly.
-- Confirmed via `ps aux` inside the container that the JVM actually
-  received `-Desa.mo.nmf.packagemanager.appsIsolation=totally-bogus-mode`
-  verbatim (the shell bootloader does pass through any *non-empty* value
-  unmodified).
-- Traced the actual fallthrough mechanism precisely: `AppsIsolationMode.getCurrent()`
-  (`AppsIsolationMode.java:57-60`) returns the raw string as-is whenever it's
-  non-null — it never validates against the four known modes. So
-  `isBubblewrap()`/`isDockerContainers()`/`isLinuxUserspace()` (each an
-  exact-string `.equals()` check) all evaluate false for
-  `"totally-bogus-mode"`. `AppsLauncherProviderServiceImpl.init()`
-  (`AppsLauncherProviderServiceImpl.java:136-145`) only branches on
-  `isBubblewrap()`/`isDockerContainers()`/Windows — **everything else,
-  including both `"none"` and `"linux-userspace"`, falls through to the
-  same `else` branch, `new AppsLauncherManagerLinux(...)`.** So
-  `linux-userspace` was never a separate branch here at all; the
-  isolation/no-isolation distinction for that manager is made *inside*
-  `AppsLauncherManagerLinux`/`NMFPackageManager`, gated on
-  `isLinuxUserspace()` specifically — which is false for our bogus value,
-  same as it would be for a literal `"none"`.
-- Installed `hello-world` and confirmed the fail-open directly, three
-  ways: **(1)** no `app-hello-world` entry appeared in `/etc/passwd` at
-  all; **(2)** the launcher command was plain `[/bin/sh, -c, ...]`, not
-  the `[sudo, su, -, app-hello-world, -c, ...]` form findings 1/6 showed
-  under real `linux-userspace`; **(3)** `ps aux` showed the App's own JVM
-  process running **as `nmf-admin`** — the Supervisor's own account, not
-  a dedicated one. The App even launched successfully (no crash) since
-  running as `nmf-admin` sidesteps finding 6 entirely.
+**Test A — unrecognized non-empty value (`apps-isolation=totally-bogus-mode`).**
+This is the code path the root `README.md` describes.
 
-**Test B — empty value (`apps-isolation=`):** genuinely fails open too,
-but the mechanism above is **never reached** — a different, shell-level
-default intercepts it first, discovered live.
-- `start_supervisor.sh`'s own `initialisation()` reads the config file with
+- **Boot log: no indication of a problem.** It shows
+  `BOOTLOADER CONFIRMATION confirmed after 1s`, the same shape as a normal
+  boot.
+- The JVM received `-Desa.mo.nmf.packagemanager.appsIsolation=totally-bogus-mode`
+  verbatim (checked with `ps aux` inside the container). The shell
+  bootloader passes any *non-empty* value through unmodified.
+- The fallthrough, traced in source:
+  - `AppsIsolationMode.getCurrent()` (`AppsIsolationMode.java:57-60`)
+    returns the raw string whenever it's non-null. It never checks it
+    against the four known modes.
+  - So `isBubblewrap()`/`isDockerContainers()`/`isLinuxUserspace()`, each
+    an exact-string `.equals()` check, all return false for
+    `"totally-bogus-mode"`.
+  - `AppsLauncherProviderServiceImpl.init()`
+    (`AppsLauncherProviderServiceImpl.java:136-145`) only branches on
+    `isBubblewrap()`/`isDockerContainers()`/Windows. **Everything else,
+    including both `"none"` and `"linux-userspace"`, falls through to the
+    same `else` branch, `new AppsLauncherManagerLinux(...)`.**
+  - `linux-userspace` isolation is decided later, inside
+    `AppsLauncherManagerLinux`/`NMFPackageManager`, gated on
+    `isLinuxUserspace()`. That's false for the bogus value, the same as
+    for a literal `"none"`.
+- After installing `hello-world`, the fail-open was confirmed three ways:
+  1. No `app-hello-world` entry appeared in `/etc/passwd`.
+  2. The launcher command was plain `[/bin/sh, -c, ...]`, not the
+     `[sudo, su, -, app-hello-world, -c, ...]` form findings 1/6 showed
+     under real `linux-userspace`.
+  3. `ps aux` showed the App's JVM running **as `nmf-admin`**, the
+     Supervisor's own account.
+- The App even launched successfully, because running as `nmf-admin`
+  sidesteps finding 6.
+
+**Test B — empty value (`apps-isolation=`).** This also fails open, but
+the Test A mechanism is **never reached**. A shell-level default
+intercepts it first, discovered live.
+
+- `start_supervisor.sh`'s `initialisation()` reads the config with
   `_v=$(get_prop apps-isolation "$CONFIG_FILE"); [ -n "$_v" ] &&
-  APPS_ISOLATION=$_v` — for an empty value, `[ -n "$_v" ]` is **false**,
-  so the override is skipped entirely and `APPS_ISOLATION` stays at the
-  script's own hardcoded built-in default (`APPS_ISOLATION=none`, set at
-  the top of the script, unconditionally, before any config file is even
-  read).
-- Confirmed via `ps aux`: the JVM received
-  `-Desa.mo.nmf.packagemanager.appsIsolation=none` — a **valid, literal
-  `"none"`**, not an empty or corrupted value. `AppsIsolationMode`'s own
-  Java-side fallback (the thing this finding is actually about) is never
-  exercised in this case — the fail-open happens one layer earlier, by
-  accident of a shell script default that happens to point the same
-  direction.
-- Practical outcome is identical to Test A (no isolation), but the
-  *mechanism* differs enough that it's worth reporting as two separate
-  observations rather than one, if this goes back to César: the real
-  `AppsIsolationMode` fallback (Test A) needs the fix suggested in the
-  source `README.md`; the shell-level default (Test B) is a second,
-  independent place the same "default to strongest, not weakest" fix
-  would need to apply, or the empty-string case will keep silently
-  becoming `none` regardless of what the Java-side fix does.
-- Not tested: whether `get_prop`'s own parsing (`sed -n
-  "s/^$1=//p" "$2" | head -n 1 | tr -d '\r'`) treats a merely-whitespace
-  value (e.g. `apps-isolation= `) the same as fully empty — plausible it
-  would, not confirmed.
+  APPS_ISOLATION=$_v`.
+- For an empty value, `[ -n "$_v" ]` is false, so the override is skipped.
+  `APPS_ISOLATION` keeps the script's hardcoded default,
+  `APPS_ISOLATION=none`, set unconditionally at the top of the script.
+- `ps aux` confirmed the JVM received
+  `-Desa.mo.nmf.packagemanager.appsIsolation=none`: a valid, literal
+  `"none"`, not an empty or corrupted value.
+- So `AppsIsolationMode`'s Java-side fallback is never exercised here. The
+  fail-open happens one layer earlier, from a shell default that happens
+  to point the same way.
+- The outcome is the same as Test A (no isolation), but the mechanism
+  differs, so it's worth reporting as a separate observation:
+  - Test A needs the fix suggested in the root `README.md`.
+  - Test B is a second, independent place the same "default to strongest,
+    not weakest" fix must apply. Otherwise the empty value keeps silently
+    becoming `none`, whatever the Java-side fix does.
+- Not tested: whether `get_prop`'s parsing (`sed -n
+  "s/^$1=//p" "$2" | head -n 1 | tr -d '\r'`) treats a whitespace-only
+  value (e.g. `apps-isolation= `) as empty. Plausible, not confirmed.
 - Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
   tip). The current pin is the root `README.md` "Verified against" line.
 

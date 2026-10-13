@@ -46,8 +46,8 @@ write, then delete). Environment: `docker/bubblewrap/`.
   hello` failed outright:
   `bwrap: No permissions to create a new namespace, likely because the
   kernel does not allow non-privileged user namespaces.` One correction to
-  the predicted mechanism: the source `README.md` attributes this flag's
-  necessity specifically to `pivot_root(2)` being blocked; what was
+  the predicted mechanism: `docs/MIGRATION_TO_TESTBED.md` §7 attributes
+  this flag's necessity specifically to `pivot_root(2)` being blocked; what was
   actually observed here is the **user-namespace creation itself**
   (`unshare`/`clone(CLONE_NEWUSER)`) being blocked by Docker's default
   seccomp profile — `pivot_root` may be a second thing the same flag
@@ -77,7 +77,7 @@ write, then delete). Environment: `docker/bubblewrap/`.
   ```
   Confirmed on disk afterward too: `marker.txt` still reads
   `secret-from-A`, unmodified — the read-exposure is real, and write/delete
-  really are blocked by the narrower per-App binds, exactly as the source
+  really are blocked by the narrower per-App binds, exactly as the root
   `README.md` states.
 - Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
   tip). The current pin is the root `README.md` "Verified against" line.

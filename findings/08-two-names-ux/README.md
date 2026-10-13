@@ -4,9 +4,9 @@
 suggested fix. Nothing below restates that.
 
 **Severity (per source):** Minor (UX), live-reproduced.
-**Classification:** fully scriptable, simplest finding — good first
-smoke-test that the migrated toolchain (`docs/SETUP.md` "App-scope setup")
-works at all.
+**Classification:** fully scriptable, mode-independent. The simplest
+finding, so it's a good first smoke test that the toolchain works at all.
+**Setup needed:** `docs/SETUP.md` "App-scope setup".
 
 ## Reproduction steps
 

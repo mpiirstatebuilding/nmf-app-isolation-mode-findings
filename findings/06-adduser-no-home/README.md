@@ -25,41 +25,45 @@ testbed's image — it would silently suppress the bug.
 
 ## Observed
 
-**Result: CONFIRMED, live, 2026-09-15** — but the failure surfaced one step
-later than the predicted signature, and in two places, not one. Recorded
-precisely rather than adjusted to match the prediction (same principle
-finding 3 states explicitly).
+**Result: CONFIRMED, live, 2026-09-15.** The App crashes on launch as
+predicted. This run recorded the failure as appearing one step later than
+the predicted signature, and in two places, not one. (Corrected below:
+the predicted `chgrp` line *does* appear at account creation; this run
+missed it.)
 
-- Base image used: `eclipse-temurin:21-jre`, actually **Ubuntu 26.04**
-  (`ID_LIKE=debian` — Ubuntu inherits the same `adduser` package/behavior
-  from Debian, so it still exhibits the bug; not literally "Debian" but
-  satisfies the "not Alpine/BusyBox" requirement this finding is actually
-  about).
-- **Same root cause hit before this finding was even reachable:**
-  `setup_linux_userspace.sh` (NMF-generated, a different call site from
-  this finding's own `LinuxUsersGroups.java`) creates the Supervisor's own
-  `nmf-admin` account the identical way and hit the identical bug — see
+- **Base image:** `eclipse-temurin:21-jre`, which is actually
+  **Ubuntu 26.04** (`ID_LIKE=debian`). Ubuntu inherits Debian's `adduser`
+  package and behavior, so it still shows the bug. It isn't literally
+  Debian, but it meets the "not Alpine/BusyBox" requirement that matters
+  here.
+- **The same root cause hit earlier, before this finding was reachable.**
+  NMF's generated `setup_linux_userspace.sh`, a different call site from
+  this finding's `LinuxUsersGroups.java`, creates the Supervisor's own
+  `nmf-admin` account the same way and hits the same bug. See
   `docs/PROVENANCE.md`'s "New discovery, this testbed" entry for the full
-  writeup and why it isn't folded into this finding's own numbering.
-- **The finding itself, App account:** installing `hello-world` created
-  `app-hello-world:x:101:102::/nonexistent:/bin/bash` — home is
-  `/nonexistent`, confirmed. The predicted
-  `chgrp: cannot access '/nonexistent': No such file or directory` did
-  **not** appear at account-creation time in our run — the account
-  creation's own `chgrp`/`chmod` calls target `apps/hello-world/` and
-  `logs/app_hello-world/` (real, existing directories), not `$HOME`
-  directly, and those succeeded. The actual failure surfaced one step
-  later, inside the App's own process (running as `app-hello-world` via
-  `sudo su - app-hello-world`): `AppStorage.mkDirAndSetPermissions` tries to
-  create `$HOME/.nmf-apps/hello-world/nmf-internal` and fails with
-  `java.nio.file.NoSuchFileException: /nonexistent/.nmf-apps/hello-world/nmf-internal`,
-  which crashes the App on launch (`App 'hello-world' (id=1) process exited
-  with code 1, classified as CRASHED`). Same root cause, same overall
-  impact the source `README.md` states ("a linux-userspace-mode App fails
-  to launch outright") — just a different log signature than predicted.
+  write-up and why it isn't numbered as part of this finding.
+- **The finding itself, App account:**
+  - Installing `hello-world` created
+    `app-hello-world:x:101:102::/nonexistent:/bin/bash`, so the home is
+    `/nonexistent`.
+  - This run recorded the predicted
+    `chgrp: cannot access '/nonexistent': No such file or directory` as
+    **not** appearing at account creation (corrected below). It
+    attributed that to the account-creation `chgrp`/`chmod` calls
+    targeting `apps/hello-world/` and `logs/app_hello-world/`, which
+    exist, rather than `$HOME`.
+  - The App's own process (running as `app-hello-world` via
+    `sudo su - app-hello-world`) failed next.
+    `AppStorage.mkDirAndSetPermissions` tries to create
+    `$HOME/.nmf-apps/hello-world/nmf-internal` and fails with
+    `java.nio.file.NoSuchFileException: /nonexistent/.nmf-apps/hello-world/nmf-internal`.
+  - That crashes the App on launch: `App 'hello-world' (id=1) process
+    exited with code 1, classified as CRASHED`.
+  - Same root cause, and the same impact the root `README.md` states ("a
+    linux-userspace-mode App fails to launch outright").
 - Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
   tip). The current pin is the root `README.md` "Verified against" line.
-- Environment: `docker/linux-userspace/`, see findings/01's Observed section
+- Environment: `docker/linux-userspace/`. See finding 1's Observed section
   for the shared setup.
 
 ## Re-verified 2026-10-06: 5.1 release and v6.0
