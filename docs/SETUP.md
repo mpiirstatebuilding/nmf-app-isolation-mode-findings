@@ -156,7 +156,7 @@ outcomes, not one:
 Avoid giving App B a name that's a substring of App A's name — process/
 container name-matching can otherwise merge the two Apps into one handle.
 
-Both procedures above were validated live end-to-end in the source project
+The App-scope and Track B procedures were validated live end-to-end in the source project
 (all four `appsIsolation` modes, 2026-08-29) before migration; see
 `docs/PROVENANCE.md` for the one piece of upstream context (PR #192) that
 made live `bubblewrap` app-scope verification possible at all. Full

@@ -1,20 +1,21 @@
 # Findings from NMF isolation-mode benchmarking
 
-Ten bugs and gaps in how NMF isolates Apps, found while benchmarking its
-four `appsIsolation` modes. Each one is reproduced live in this repo.
+Ten bugs and gaps found while benchmarking NMF's four `appsIsolation`
+modes. Each has a reproduction in `findings/`. All but finding 5 are
+live-reproduced.
 
 | # | Finding | Severity | Scope | Verification |
 |---|---|---|---|---|
 | 1 | `linux-userspace` account/identity takeover via a same-named, different-version package | High | App-vs-App | Live-reproduced |
-| 2 | Unsanitized package name → path traversal on install | High | Any deployment | Live-reproduced |
-| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Any deployment | Live-reproduced |
+| 2 | Unsanitized package name → path traversal on install | High | Any deployment shape | Live-reproduced |
+| 3 | `bootloader/config.properties` has no integrity check, fails open to no isolation | High | Any deployment shape | Live-reproduced |
 | 4 | bubblewrap `--ro-bind / /`, no seccomp/AppArmor/cap-drop | High | App-vs-host | Live-reproduced |
 | 5 | `docker-containers` sets no `--pids-limit` on the sibling App container | High | App-vs-host | Source-reviewed |
-| 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Any deployment | Live-reproduced |
-| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override | Medium | Any deployment | Live-reproduced |
+| 6 | `linux-userspace`'s Debian `adduser()` never sets `--home` | High | Any deployment shape | Live-reproduced |
+| 7 | bubblewrap `DEFAULT_PATH` is hardcoded, no override | Medium | Any deployment shape | Live-reproduced |
 | 8 | PackageManagement/AppsLauncher key the same App by two different names | Minor (UX) | Not isolation | Live-reproduced |
 | 9 | `docker-containers` sibling-mount host-path precondition is undocumented | Doc gap | Not isolation | Live-reproduced |
-| 10 | bubblewrap: every App failure is reported as exit 0 / `EXITED` | Medium | Any deployment | Live-reproduced |
+| 10 | bubblewrap: every App failure is reported as exit 0 / `EXITED` | Medium | Any deployment shape | Live-reproduced |
 
 **Scope** says who should care:
 
@@ -24,7 +25,7 @@ four `appsIsolation` modes. Each one is reproduced live in this repo.
 - **App-vs-host** (4, 5): a single App reaches beyond its own sandbox into
   the host filesystem or its resources, however many organizations submit
   Apps.
-- **Any deployment** (2, 3, 6, 7, 10): Supervisor-level or functional
+- **Any deployment shape** (2, 3, 6, 7, 10): Supervisor-level or functional
   bugs that apply to any deployment shape, not just a multi-tenant one.
 - **Not isolation** (8, 9): a UX issue and a documentation gap.
 
