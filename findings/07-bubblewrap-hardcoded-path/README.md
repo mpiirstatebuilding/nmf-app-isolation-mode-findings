@@ -16,7 +16,9 @@ not on bubblewrap's hardcoded `/usr/local/bin:/usr/bin:/bin`.
 
 ## Reproduction steps
 
-1. Start `docker/bubblewrap/` with `--security-opt seccomp=unconfined` and
+1. Start `docker/bubblewrap/` with `--security-opt seccomp=unconfined` (plus
+   `--security-opt apparmor=unconfined` on a Linux Docker host, see
+   finding 4's preconditions) and
    `track-b-app-a-1.0.0.nmfpack` staged (`docs/SETUP.md`).
 2. Install and launch it:
    `java -jar runapp-trigger.jar <directoryURI> track-b-app-a track-b-app-a-1.0.0.nmfpack`.

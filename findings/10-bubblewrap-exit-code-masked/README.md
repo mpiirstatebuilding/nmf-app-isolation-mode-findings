@@ -7,7 +7,9 @@ Impact, source citations and the suggested fix are in the root
 **Classification:** live, environment-dependent (same `bubblewrap`
 preconditions as findings 4 and 7).
 **Setup needed:** `docs/SETUP.md` "App-scope setup", on `docker/bubblewrap/`
-run with `--security-opt seccomp=unconfined`.
+run with `--security-opt seccomp=unconfined` (plus
+`--security-opt apparmor=unconfined` on a Linux Docker host, see finding 4's
+preconditions).
 
 Found 2026-10-06 while re-running finding 7, so it wasn't among the first
 nine findings.

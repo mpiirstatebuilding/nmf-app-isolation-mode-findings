@@ -9,3 +9,4 @@ results/
 # finding 2's fixture build destination (outside the module's own target/
 # by design -- that's the point of the traversal test; see its README)
 findings/02-path-traversal-install/fixtures/outside-target/
+packages/pwned-app-1.0.0-fixed.nmfpack

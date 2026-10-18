@@ -72,9 +72,10 @@ V=5.1   # or 6.0, matching the filesystem you generated
 docker build -f docker/linux-userspace/Dockerfile -t nmf-testbed-linux-userspace:$V "$FS"
 docker run -d --name nmf-sup nmf-testbed-linux-userspace:$V
 
-# bubblewrap (findings 4, 7, 10) — needs the seccomp opt, see finding 4
+# bubblewrap (findings 4, 7, 10) — needs the seccomp opt, plus the AppArmor
+# opt on a Linux Docker host; see finding 4's preconditions
 docker build -f docker/bubblewrap/Dockerfile -t nmf-testbed-bubblewrap:$V "$FS"
-docker run -d --name nmf-sup --security-opt seccomp=unconfined nmf-testbed-bubblewrap:$V
+docker run -d --name nmf-sup --security-opt seccomp=unconfined --security-opt apparmor=unconfined nmf-testbed-bubblewrap:$V
 
 # docker-containers (findings 5, 9) — Docker-outside-of-Docker, needs the
 # host docker.sock; finding 9's precondition is that the filesystem is
@@ -172,7 +173,8 @@ three:
 
 - finding 9 requires that the Supervisor's filesystem is NOT
   host-bind-mounted
-- findings 4, 7 and 10 need `--security-opt seccomp=unconfined` and a
+- findings 4, 7 and 10 need `--security-opt seccomp=unconfined` (plus
+  `--security-opt apparmor=unconfined` on a Linux Docker host) and a
   bubblewrap-capable host
 
 **Tried and rejected:**
@@ -216,8 +218,8 @@ With this testbed's fixtures (`findings/04-*/fixtures/track-b-app-a/` and
 `RunAppTrigger` twice, in this order (same `docker run` wrapper as above):
 
 ```bash
-java -jar runapp-trigger.jar <directoryURI> track-b-app-a track-b-app-a-1.0.0.nmfpack
-java -jar runapp-trigger.jar <directoryURI> track-b-app-b track-b-app-b-1.0.0.nmfpack
+java -jar runapp-trigger-jar-with-dependencies.jar <directoryURI> track-b-app-a track-b-app-a-1.0.0.nmfpack
+java -jar runapp-trigger-jar-with-dependencies.jar <directoryURI> track-b-app-b track-b-app-b-1.0.0.nmfpack
 ```
 
 The first run makes App A write its marker. The second makes App B try to

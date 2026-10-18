@@ -13,6 +13,13 @@ write/delete are correctly blocked).
 - The Supervisor's own container needs `--security-opt seccomp=unconfined`.
   Docker's default seccomp profile blocks bubblewrap's user-namespace
   creation (see Observed), regardless of granted capabilities.
+- On a Linux Docker host, the Supervisor's container also needs
+  `--security-opt apparmor=unconfined`. Docker's `docker-default` AppArmor
+  profile denies `mount`, so `bwrap` gets its namespaces but then fails
+  with `bwrap: Failed to make / slave: Permission denied`. Every App exits
+  with code 1 within milliseconds, before `start_app.sh` runs, so the
+  `logs/app_*/` directories exist but stay empty. Docker Desktop on macOS
+  applies no AppArmor profile, so the flag doesn't matter there.
 - If verifying via in-namespace inspection (e.g. `nsenter`) rather than just
   the read/write/delete file test, the Supervisor's container also needs
   `--cap-add=SYS_PTRACE --cap-add=SYS_ADMIN`.
@@ -38,7 +45,7 @@ write/delete are correctly blocked).
 3. Run App A, then App B, as in `docs/SETUP.md`'s Track B section.
 4. Read App B's results:
    ```bash
-   docker exec nmf-sup sh -c 'grep -h -A3 "TrackBAppB results" /nanosat-mo-framework/logs/app_track-b-app-b/*.log'
+   docker exec nmf-sup sh -c 'grep -h -A3 "TrackBAppB results" logs/app_track-b-app-b/*.log'
    ```
    The bug: `READ: SUCCESS content=[secret-from-A]`. `WRITE` and `DELETE`
    fail, as they should.
@@ -103,3 +110,13 @@ write, then delete). Environment: `docker/bubblewrap/`. Supervisor logs: [`evide
   `--security-opt seccomp=unconfined`, a bare `bwrap --unshare-all
   --ro-bind / / /bin/echo hello` fails with the same "No permissions to
   create a new namespace" error. With the flag, it prints `hello`.
+- **Re-confirmed on a Linux host, 2026-10-18** (Ubuntu 26.04.1, Docker
+  Engine 29.9.1, `release-5.1` image; host userns sysctls already
+  permissive: `kernel.apparmor_restrict_unprivileged_userns = 0`). With
+  `seccomp=unconfined` alone, the bare check failed with `bwrap: Failed to
+  make / slave: Permission denied`. Both Track B Apps were logged as
+  `exited with code 1, classified as CRASHED`, and their App logs were
+  empty. Adding `--security-opt apparmor=unconfined` made the check print
+  `hello`. After that, finding 7 reproduced first (`java: not found`, with
+  `.exit` = 127), and then the three App B outcomes matched the ones above
+  exactly.

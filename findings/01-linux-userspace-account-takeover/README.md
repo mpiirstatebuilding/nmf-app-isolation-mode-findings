@@ -22,12 +22,12 @@ Impact, source citations and the suggested fix are in the root
    (`docs/SETUP.md`).
 4. Install package A, then inspect the account and App directory:
    ```bash
-   java -jar runapp-trigger.jar <directoryURI> hello-world hello-world-5.1.nmfpack
+   java -jar runapp-trigger-jar-with-dependencies.jar <directoryURI> hello-world hello-world-5.1.nmfpack
    docker exec nmf-sup sh -c 'grep app-hello-world /etc/passwd; ls /nanosat-mo-framework/apps/hello-world'
    ```
 5. Install package B without uninstalling A, and inspect again:
    ```bash
-   java -jar runapp-trigger.jar <directoryURI> hello-world hello-world-5.2-TEST.nmfpack
+   java -jar runapp-trigger-jar-with-dependencies.jar <directoryURI> hello-world hello-world-5.2-TEST.nmfpack
    docker exec nmf-sup sh -c 'grep app-hello-world /etc/passwd; ls /nanosat-mo-framework/apps/hello-world; grep -E "^(MAIN_CLASS|JAR_APP)=" /nanosat-mo-framework/apps/hello-world/start_app.sh'
    ```
    The bug: there's still exactly one `app-hello-world` account (same

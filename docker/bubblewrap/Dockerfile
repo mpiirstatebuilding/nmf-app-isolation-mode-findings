@@ -10,12 +10,16 @@
 # build-time one): the container needs `--security-opt seccomp=unconfined`
 # -- Docker's default seccomp profile blocks pivot_root(2), which bwrap's
 # `--ro-bind / /` needs, confirmed live 2026-09-15 (see the finding's own
-# README for the exact denial before this flag was added).
+# README for the exact denial before this flag was added). On a Linux
+# Docker host it also needs `--security-opt apparmor=unconfined`: the
+# docker-default AppArmor profile denies mount, so bwrap fails with
+# "Failed to make / slave: Permission denied" (confirmed 2026-10-18).
 #
 #   docker build -f docker/bubblewrap/Dockerfile \
 #     -t nmf-testbed-bubblewrap:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
-#   docker run -d --security-opt seccomp=unconfined nmf-testbed-bubblewrap:<nmf-version>
+#   docker run -d --security-opt seccomp=unconfined --security-opt apparmor=unconfined \
+#     nmf-testbed-bubblewrap:<nmf-version>
 #
 # See docs/SETUP.md "Building and running the Supervisor image per mode"
 # for the full build/run commands.
