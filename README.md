@@ -140,12 +140,24 @@ a `..`-traversal string and make `install()` create a directory outside
 the intended install directories — confirmed escaping the NMF root entirely
 (`info.name=../../../../tmp/nmf-escape` created `/tmp/nmf-escape`, live on
 `release-5.1` and `v6.0`; see `findings/02-*`). The caller is still told the
-install succeeded. What currently escapes is *directory creation*, not file
-content: the aux-file writes to the traversed path are silently swallowed
-and the receipt write throws, so no attacker-chosen bytes land outside
-today. That limit is incidental — it rests on two unrelated bugs, not on
-any validation of `info.name` — so fixing either without sanitizing the
-name would turn this into an arbitrary-file write. This is a
+install succeeded.
+
+File content escapes too, as soon as any other package has been installed
+before. Re-tested on `release-5.1` and `v6.0` from a fresh setup: with
+`etc/installations-tracker/` already created by an ordinary install, the
+traversal package's installation receipt was written to
+`/tmp/nmf-escape.receipt`, outside the NMF root. The file name always ends
+in `.receipt`, but its contents are the package's own metadata, which the
+attacker writes. On a Supervisor that has never installed anything, the
+receipt write fails instead, and only empty directories escape. That's
+the case our first runs hit. The App's aux files (`start_app.sh` and the
+`.properties` files) are silently not written either way. Neither limit
+comes from any validation of `info.name`.
+
+Once the receipt exists, uninstall is reachable too. Its only gate checks
+for that same receipt, and its `removeAuxiliaryFiles()` call would delete
+those three file names at the traversed path. We've read this in the
+source but haven't run it live. This is a
 Supervisor-level gap — it applies before any `appsIsolation` mode takes
 effect, so it undermines filesystem boundaries regardless of which
 isolation mode is active. Only the relative `..`-traversal form escapes; an
@@ -159,7 +171,8 @@ absolute path in `info.name` didn't in our testing.
   File appDir = new File(Deployment.getAppsDir(), packageName);
   ```
 - [`NMFPackageManager.java:205`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L205) — same pattern for the receipt filename
-- [`NMFPackageManager.java:247-248`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L247-L248) — same pattern again for the uninstall path (`removeAuxiliaryFiles`, unguarded by `resolveInside`, so it would delete outside the tree; currently unreachable because uninstall is gated on a receipt that a traversal name never writes — tested, see `findings/02-*`)
+- [`NMFPackageManager.java:247-248`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L247-L248) — same pattern again for the uninstall path (`removeAuxiliaryFiles`, unguarded by `resolveInside`, so it would delete outside the tree; reachable whenever the traversed receipt was written, see `findings/02-*`)
+- [`NMFPackageManager.java:432-440`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L432-L440) — `isPackageInstalled()`, the uninstall gate, which only checks that the receipt exists at that same traversed path
 - [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/HelperNMFPackage.java:168`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/HelperNMFPackage.java#L168) — `resolveInside()`, the existing traversal guard, never applied to the package name
 - [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/metadata/Metadata.java:156-158`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/metadata/Metadata.java#L156-L158) — `getPackageName()`, the raw, unvalidated read
 

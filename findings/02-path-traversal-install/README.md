@@ -32,9 +32,12 @@ mode. The bug is reached before any isolation mode takes effect.
      one level inside `logs/`; the "Re-tested 2026-10-18" section below
      shows a deeper name escaping the NMF root entirely.
    - the receipt write targets
-     `etc/installations-tracker/../../outside-target/pwned-app.receipt`
-     and fails with a `FileNotFoundException`, which `install()`'s broad
-     catch logs as `SEVERE`
+     `etc/installations-tracker/../../outside-target/pwned-app.receipt`.
+     On a Supervisor that has never installed anything, it fails with a
+     `FileNotFoundException`, which `install()`'s broad catch logs as
+     `SEVERE`. If any package was installed first, it succeeds, and the
+     receipt lands at `/nanosat-mo-framework/outside-target/pwned-app.receipt`
+     (see "Re-run 2026-10-18 on a fresh setup").
    - the aux files (`start_app.sh` and the `.properties` files) are logged
      as "Creating file on: .../apps/../../outside-target/pwned-app/..." but
      never written, because `AuxFilesGenerator.writeFile()` swallows the
@@ -99,7 +102,9 @@ Supervisor-level). Supervisor logs: [`evidence/5.1/linux-userspace-f2.log`](../.
     run. A traversing zip entry is blocked separately (see the build note),
     so no package shape avoids both problems.
 - **Install receipt: not written where predicted. `install()` hit a
-  logged (not silent) exception instead.**
+  logged (not silent) exception instead.** This holds only on a Supervisor
+  with no earlier install; see "Re-run 2026-10-18 on a fresh setup" below
+  for what happens after one.
   - Expected: `<nmf-root>/outside-target/pwned-app.receipt`.
   - Observed: `java.io.FileNotFoundException:
     /nanosat-mo-framework/etc/installations-tracker/../../outside-target/pwned-app.receipt`
@@ -118,8 +123,8 @@ Supervisor-level). Supervisor logs: [`evidence/5.1/linux-userspace-f2.log`](../.
   - So `mkdirs()` returns early and never creates the literal
     `installations-tracker/` path component, and the `FileOutputStream`
     open fails on it.
-  - This is deterministic: log-dir creation always runs before receipt
-    storage in `install()`.
+  - This is deterministic as long as `etc/installations-tracker/` doesn't
+    exist yet, which is the case until the first ordinary install.
 - **The caller was told it succeeded, which sharpens the core claim.**
   - The receipt write threw and was logged `SEVERE`, and the aux files
     were never written.
@@ -160,20 +165,18 @@ outside-target/pwned-deep-1.0.0.nmfpack`.
 - The install was still reported to the client as success
   (`install() acknowledged` → `Package ... installed.`), while the
   Supervisor log shows `SEVERE: The package ... could not be installed!`.
-- **No file *content* escaped, in current code.** The aux-file writes to
+- **No file *content* escaped on this fresh Supervisor.** The aux-file writes to
   `apps/../../../../tmp/nmf-escape/` are logged as "Creating file on: ..."
   but swallowed by `AuxFilesGenerator.writeFile()` (the directory doesn't
   exist yet when they run — `logDir.mkdirs()` runs after), and the receipt
   write throws `FileNotFoundException` on
-  `etc/installations-tracker/../../../../tmp/nmf-escape.receipt`. So today
-  the escape produces an empty directory, not attacker-chosen file
-  contents. That limit is incidental: it rests on two unrelated bugs (the
-  swallowed aux write and the failing receipt write), not on any check of
-  `info.name`. Fixing either without sanitizing `info.name` would turn
-  this into an arbitrary-file write.
+  `etc/installations-tracker/../../../../tmp/nmf-escape.receipt`. The
+  receipt write only fails because `installations-tracker/` didn't exist
+  yet. After any earlier install it succeeds (see the fresh-setup re-run
+  below).
 
-**2. Does the uninstall path also traverse? The code does, but it's
-currently unreachable.**
+**2. Does the uninstall path also traverse? The code does. It was
+unreachable here, but only because no receipt had been written.**
 
 - `uninstall()` calls `removeAuxiliaryFiles(new File(getAppsDir(),
   packageName), ...)` ([`NMFPackageManager.java:247-248`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L247-L248)), which deletes
@@ -189,27 +192,71 @@ currently unreachable.**
   `/tmp/nmf-escape/`, then `PackageManagement.uninstall` was called for
   `pwned-deep-1.0.0.nmfpack`. It was refused with `response ERROR errorNumber=1`
   (`InvalidArgumentException` — "The package is not installed!"), and all
-  three canaries survived untouched. So the unguarded delete exists in the
-  code but the same receipt bug keeps it unreachable through the service.
+  three canaries survived untouched. That only holds while the receipt is
+  missing. The fresh-setup re-run below shows the receipt being written.
 
-**Net:** the finding stands and is sharpened — a crafted `info.name`
-escapes the NMF root (directory creation at an arbitrary absolute path) and
-the install is still reported as success. The headline in root `README.md`
-§2 is corrected to say *directories* escape today, with arbitrary file
-write as the latent risk, rather than implying file contents already land
-outside. Severity stays High. Supervisor log excerpts:
+Supervisor log excerpts:
 [`evidence/5.1/f2-deeptraversal-escape.log`](../../evidence/5.1/f2-deeptraversal-escape.log)
 and [`evidence/6.0/f2-deeptraversal-escape.log`](../../evidence/6.0/f2-deeptraversal-escape.log).
 
+## Re-run 2026-10-18 on a fresh setup: the receipt escapes after any earlier install
+
+The runs above each installed a traversal package on a Supervisor that had
+never installed anything. A clean-room re-run of the whole testbed on
+`release-5.1` and on `v6.0` (fresh NMF clone at the pinned SHA, fresh
+testbed clone, empty Maven repository, images
+`nmf-testbed-linux-userspace:5.1-fresh` and `:6.0-fresh`) installed
+`hello-world` first, for findings 8, 1 and 6, and then both traversal
+packages in the same container. The results were identical on both refs.
+The file sizes below are from 5.1; on 6.0 they were 490 and 486 bytes.
+
+- Both installs logged `Package successfully installed`, with no `SEVERE`
+  line, and the client got "Package ... installed." for each.
+- Both log directories escaped as before:
+  `/nanosat-mo-framework/logs/outside-target/pwned-app/` and
+  `/tmp/nmf-escape/`, both empty.
+- **Both receipts were written:**
+  ```
+  -rw-r--r-- 1 nmf-admin nmf-admin 481 /nanosat-mo-framework/outside-target/pwned-app.receipt
+  -rw-r--r-- 1 nmf-admin nmf-admin 477 /tmp/nmf-escape.receipt
+  ```
+  `/tmp/nmf-escape.receipt` is outside the NMF root. Its contents are the
+  package's metadata as a properties file, starting `#NMF Package
+  Metadata` and including `info.name=../../../../tmp/nmf-escape`. So file
+  contents the attacker writes do land outside today. The file name
+  always ends in `.receipt`.
+- Why: `hello-world`'s install had created `etc/installations-tracker/`.
+  With that directory present, the OS resolves
+  `etc/installations-tracker/../../../../tmp/nmf-escape.receipt` normally,
+  and `Metadata.store()` succeeds. The `mkdirs()` quirk described in
+  Observed only bites while that directory is missing.
+- Consequence for uninstall, read in source but **not run live**
+  (`RunAppTrigger` has no uninstall call): `isPackageInstalled()`
+  ([`NMFPackageManager.java:432-440`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L432-L440)) only checks that the
+  receipt exists at that same traversed path, so it now returns true for
+  the traversal package. Uninstall would then reach the unguarded
+  `removeAuxiliaryFiles()` and delete `start_app.sh`,
+  `provider.properties` and `transport.properties` under `/tmp/nmf-escape/`.
+- The aux files themselves were still silently not written.
+
+**Net:** a crafted `info.name` escapes the NMF root. It creates
+directories, and after any earlier install it also writes its receipt
+there, while the client is told the install succeeded. Severity stays
+High. Supervisor logs:
+[`evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log`](../../evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log)
+and [`evidence/6.0/fresh-linux-userspace-f8-f1-f6-f2.log`](../../evidence/6.0/fresh-linux-userspace-f8-f1-f6-f2.log).
+
 ## Verifying a fix
 
-Install both packages again (`pwned-app-1.0.0-fixed.nmfpack` and
+On a fresh container, install `hello-world-5.1.nmfpack` first, so
+`etc/installations-tracker/` exists and the receipt case is covered. Then
+install both traversal packages (`pwned-app-1.0.0-fixed.nmfpack` and
 `pwned-deep-1.0.0.nmfpack`). A fixed Supervisor rejects each one as an
 invalid package name before creating anything, and the client gets an
-error, not "Package ... installed.". Check that neither directory exists:
+error, not "Package ... installed.". Check that nothing was created:
 
 ```bash
-docker exec nmf-sup sh -c 'ls -d /tmp/nmf-escape /nanosat-mo-framework/logs/outside-target 2>&1'
+docker exec nmf-sup sh -c 'ls -d /tmp/nmf-escape /tmp/nmf-escape.receipt /nanosat-mo-framework/logs/outside-target /nanosat-mo-framework/outside-target 2>&1'
 ```
 
-Both should report "No such file or directory".
+All four should report "No such file or directory".

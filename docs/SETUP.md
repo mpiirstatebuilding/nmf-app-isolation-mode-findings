@@ -18,8 +18,11 @@ reproductions were run against worktrees named
 `../nanosat-mo-framework-v6.0` (branch `v6.0`); any paths are fine as long
 as you point the build at them.
 
-Run `mvn clean install` in each. That puts `5.1` and `6.0-SNAPSHOT` side
-by side in `~/.m2`. v6.0 needs JDK 21+.
+Run `mvn clean install -DskipTests` in each. That puts `5.1` and
+`6.0-SNAPSHOT` side by side in `~/.m2`. v6.0 needs JDK 21+. Skip the tests:
+on macOS two of `nmf-linux-maven-plugin`'s `ConfigureMissionTest` tests
+fail, because `configure_mission.sh` uses GNU `sed` syntax that BSD `sed`
+rejects (`invalid command code v`).
 
 **Match the tooling to the Supervisor's NMF version.** The NMF major
 version is also the MO area version, and a provider rejects other area
@@ -83,6 +86,8 @@ docker run -d --name nmf-sup --security-opt seccomp=unconfined --security-opt ap
 # On macOS + Docker Desktop the sibling container never starts, even with
 # the bind-mount workaround (see finding 9), so verifying a fix to finding 5
 # or 9 end-to-end needs a Linux Docker host.
+# The Dockerfile COPYs entrypoint.sh from the build context, so put it there:
+cp docker/docker-containers/entrypoint.sh "$FS/"
 docker build -f docker/docker-containers/Dockerfile -t nmf-testbed-docker-containers:$V "$FS"
 docker run -d --name nmf-sup -v /var/run/docker.sock:/var/run/docker.sock nmf-testbed-docker-containers:$V
 ```
@@ -104,8 +109,9 @@ Supervisor, not whether `appsIsolation` itself works.
 1. Build the trigger tool: `mvn package` in `tools/runapp-trigger/` →
    `target/runapp-trigger-jar-with-dependencies.jar`, after
    `tools/set-nmf-version.sh` (see above).
-2. Build a test App's `.nmfpack` — `nmf-mission-barebone`'s SDK examples
-   ship one (`sdk/examples-apps/hello-world-simple`); building it in a
+2. Build a test App's `.nmfpack`. NMF's SDK examples ship one at
+   `<checkout>/sdk/examples-apps/hello-world-simple`. The root
+   `mvn clean install` above already builds it, and building it in a
    checkout produces `target/hello-world-<that NMF version>.nmfpack`, e.g.
    `hello-world-5.1.nmfpack` or `hello-world-6.0-SNAPSHOT.nmfpack`.
    Confirmed working offline (`mvn -o package`) against both the `5.1` and
@@ -119,7 +125,13 @@ Supervisor, not whether `appsIsolation` itself works.
 3. **Stage the package(s) into `packages/`.** Copy each `.nmfpack` into the
    generated filesystem's `nanosat-mo-framework/packages/` directory
    *before* building the Supervisor image (the Dockerfile `COPY`s the whole
-   tree in). If the Supervisor is already running, `docker cp
+   tree in). Generating the filesystem doesn't create `packages/`, so create
+   it first:
+   ```bash
+   mkdir -p "$FS/nanosat-mo-framework/packages"
+   cp <pkg>.nmfpack "$FS/nanosat-mo-framework/packages/"
+   ```
+   If the Supervisor is already running, `docker cp
    <pkg>.nmfpack nmf-sup:/nanosat-mo-framework/packages/` works too, as
    long as the file ends up readable by the Supervisor's account. This step
    is required: an App sitting in `packages/` is not auto-installed at boot,
