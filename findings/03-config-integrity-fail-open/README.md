@@ -24,7 +24,7 @@ boot.
 4. Check the boot log for any warning, then check how the App ran:
    ```bash
    docker exec nmf-sup sh -c 'ps aux | grep -o "appsIsolation=[^ ]*" | head -1'
-   docker exec nmf-sup sh -c 'grep app-hello-world /etc/passwd; ps -o user,args -C java'
+   docker exec nmf-sup sh -c 'grep app-hello-world /etc/passwd; ps -o user:20,args -C java'
    ```
    The bug: the boot log is clean, no `app-hello-world` account exists, and
    the App's JVM runs as `nmf-admin`, the Supervisor's own account.

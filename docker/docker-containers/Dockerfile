@@ -15,6 +15,10 @@
 # containers mode has no linux-userspace-style adduser/sudo mechanics that
 # would need a non-root account anyway).
 #
+# entrypoint.sh must be copied into the build context first (see
+# docs/SETUP.md):
+#
+#   cp docker/docker-containers/entrypoint.sh <space-filesystem>/
 #   docker build -f docker/docker-containers/Dockerfile \
 #     -t nmf-testbed-docker-containers:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem

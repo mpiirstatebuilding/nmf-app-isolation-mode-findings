@@ -26,7 +26,10 @@ nine findings.
        'sed -i "s/^MAIN_CLASS=.*/MAIN_CLASS=does.not.Exist/" \
         /nanosat-mo-framework/apps/<app>/start_app.sh'
      ```
-     and launch it again without re-installing (exit 1):
+     and launch it again without re-installing (exit 1). If App A is
+     still running from finding 4, stop it first, or the Supervisor
+     refuses the launch (`RunAppTrigger failed: [0]`):
+     `docker exec nmf-sup pkill -f track-b-app-a-1.0.0.jar`. Then:
      `java -jar runapp-trigger.jar <directoryURI> track-b-app-a`
 2. Compare the Supervisor log's `process exited with code N, classified as
    ...` line with the sidecar `logs/app_<name>/<name>_<date>.log.exit` file.
