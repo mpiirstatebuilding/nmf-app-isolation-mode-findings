@@ -118,7 +118,13 @@ Supervisor, not whether `appsIsolation` itself works.
 3. **Stage the package(s) into `packages/`.** Copy each `.nmfpack` into the
    generated filesystem's `nanosat-mo-framework/packages/` directory
    *before* building the Supervisor image (the Dockerfile `COPY`s the whole
-   tree in). If the Supervisor is already running, `docker cp
+   tree in). Generating the filesystem doesn't create `packages/`, so create
+   it first:
+   ```bash
+   mkdir -p "$FS/nanosat-mo-framework/packages"
+   cp <pkg>.nmfpack "$FS/nanosat-mo-framework/packages/"
+   ```
+   If the Supervisor is already running, `docker cp
    <pkg>.nmfpack nmf-sup:/nanosat-mo-framework/packages/` works too, as
    long as the file ends up readable by the Supervisor's account. This step
    is required: an App sitting in `packages/` is not auto-installed at boot,
