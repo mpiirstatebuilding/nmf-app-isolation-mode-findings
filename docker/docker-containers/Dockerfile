@@ -5,8 +5,8 @@
 # sibling container, via AppsLauncherManagerDocker's plain `docker run ...`
 # (ProcessBuilder, no API client) -- so this image just needs the `docker`
 # CLI installed, and the container needs to be run with the host's
-# docker.sock bind-mounted in (see this directory's README for the run
-# command).
+# docker.sock bind-mounted in (see docs/SETUP.md "Building and running the
+# Supervisor image per mode" for the run command).
 #
 # Deliberately built with the filesystem COPY'd in at image-build time
 # (not a host bind mount) -- that is finding 9's own precondition, not a

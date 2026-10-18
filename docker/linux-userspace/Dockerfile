@@ -1,12 +1,9 @@
-# Testbed image for appsIsolation=linux-userspace (findings 1 and 6).
+# Testbed image for appsIsolation=linux-userspace (findings 1, 2, 3, 6 and 8).
 #
-# Deliberately NOT a copy of the source project's bench_isolation.sh
-# Dockerfile-patching approach (see docs/MIGRATION_TO_TESTBED.md section 2)
-# -- authored fresh for this testbed's narrower need: a Supervisor container
-# that can actually run linux-userspace mode's adduser()/su-based App
-# launch, which needs sudo + an admin account configured by the generated
-# filesystem's own setup_linux_userspace.sh (not just the plain slim runtime
-# image the other three modes use).
+# A Supervisor container that can actually run linux-userspace mode's
+# adduser()/su-based App launch, which needs sudo + an admin account
+# configured by the generated filesystem's own setup_linux_userspace.sh (not
+# just the plain runtime image the other modes use).
 #
 # Base is eclipse-temurin:21-jre -- a stock Debian/Ubuntu-based image (not
 # Alpine), which is finding 6's own host requirement, and incidentally also
@@ -15,7 +12,8 @@
 # Build context must be the generated filesystem's parent directory (i.e.
 # barebone-space-filesystem/target/space-filesystem), with any .nmfpack test
 # packages already copied into nanosat-mo-framework/packages/ beforehand --
-# see the finding's own README for the exact commands.
+# see docs/SETUP.md "Building and running the Supervisor image per mode"
+# for the exact build/run commands.
 #
 #   docker build -f docker/linux-userspace/Dockerfile \
 #     -t nmf-testbed-linux-userspace:<nmf-version> \

@@ -26,9 +26,8 @@ import org.ccsds.moims.mo.sm.packagemanagement.consumer.PackageManagementStub;
 
 /**
  * Headless MAL consumer that calls AppsLauncher.runApp() against a running
- * NanoSat MO Supervisor — a drop-in for TEST_TRIGGER_CMD in
- * bench_isolation.sh, so isolation-mode benchmarking doesn't need a manual
- * CTT click per iteration.
+ * NanoSat MO Supervisor, so each finding's App launch can be scripted
+ * instead of clicked through CTT.
  *
  * Makes the same wire calls CTT's "Run App" button makes, plus, optionally,
  * the PackageManagement install CTT's "Install Package" button makes first:
@@ -41,7 +40,7 @@ import org.ccsds.moims.mo.sm.packagemanagement.consumer.PackageManagementStub;
  *
  * PackageManagement and AppsLauncher key the same App by two DIFFERENT
  * names (confirmed live), hence two separate arguments: packageFileName is
- * the literal .nmfpack filename in packages/ (e.g. "hello-world-5.0.nmfpack");
+ * the literal .nmfpack filename in packages/ (e.g. "hello-world-5.1.nmfpack");
  * appName is the app name from the package's own metadata
  * (package-metadata.properties: info.name, e.g. "hello-world") — usually not
  * the same string.
@@ -49,12 +48,14 @@ import org.ccsds.moims.mo.sm.packagemanagement.consumer.PackageManagementStub;
  * USAGE:
  *   java -jar runapp-trigger-jar-with-dependencies.jar <directoryURI> <appName> [packageFileName]
  *
- * Example (wire into bench_isolation.sh as TEST_TRIGGER_CMD):
- *   TEST_TRIGGER_CMD='java -jar /path/to/runapp-trigger-jar-with-dependencies.jar
- *       maltcp://127.0.0.1:1024/nanosat-mo-supervisor-Directory hello-world hello-world-5.0.nmfpack'
+ * Example:
+ *   java -jar runapp-trigger-jar-with-dependencies.jar
+ *       maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory hello-world hello-world-5.1.nmfpack
  *
- * directoryURI must point to the Supervisor's Directory service (the URI
- * printed in the Supervisor log as "Directory service URI").
+ * directoryURI must point to the Supervisor's Directory service (the
+ * "URI: maltcp://..." line at the end of the Supervisor's startup log). For
+ * a containerized Supervisor, run this from a peer container on the same
+ * Docker network; see docs/SETUP.md "Docker networking".
  *
  * A transport.properties (and optionally provider.properties) file — the
  * same ones CTT/the CLI tool use — should be discoverable on the classpath

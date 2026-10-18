@@ -33,11 +33,12 @@ Findings 1–9 are ordered by how severe and reachable we think each one is,
 most important first. Finding 10 was found later and is appended rather
 than renumbering the rest. We'd rank it alongside finding 7.
 
-This repo is a **testbed**. Each finding's reproduction attempt and
-observed result is in `findings/NN-*/`. Shared setup steps are in
-`docs/SETUP.md`, and the trigger tooling is in `tools/runapp-trigger/`.
-`docs/MIGRATION_TO_TESTBED.md` records how the repo was assembled, and
-`docs/PROVENANCE.md` covers two related findings that aren't included.
+This repo is a **testbed**. Each finding's reproduction steps, observed
+results and a "Verifying a fix" check for your patch are in
+`findings/NN-*/`. Shared setup steps are in `docs/SETUP.md`, the trigger
+tooling is in `tools/runapp-trigger/`, and the Supervisor logs from the
+runs are in `evidence/`. `docs/PROVENANCE.md` covers two related findings
+that aren't included, and details the second call site of finding 6.
 
 ## Versions tested
 
@@ -46,14 +47,11 @@ observed result is in `findings/NN-*/`. Shared setup steps are in
 `master` @ `126d4379d73703a56848170e4c070c068ef0e424` ("Release 5.1 (#193)")
 is a squash of that tag with a byte-identical tree, so the line numbers
 hold for either. Every source citation below and in `findings/NN-*/` refers
-to this exact tree.
+to this exact tree, and links to it on GitHub.
 
-- Findings 1–9 were first checked live on the pre-release `v5.1` tip
-  `0933302` (2026-09-15), then re-run live on this release. Finding 5 was
-  re-run via its captured launch command, with no fork bomb, per its
-  "Source-reviewed" status.
-- Finding 10 was found during that re-run and is live-reproduced on this
-  release.
+All 10 findings are live-reproduced on this release, except finding 5, which
+is source-reviewed and confirmed from its captured launch command (no fork
+bomb run, per its "Source-reviewed" status).
 
 **Also re-run live, all 10, on `v6.0`, with the same results** @
 `5cc91528a92e4ad37d20271f4ee4d734c8209aa4` (the in-development 6.0 branch,
@@ -94,35 +92,25 @@ shared-resource leak, and requires no privilege beyond ordinary package
 submission.
 
 **Where:**
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java:136` — `packageName = metadata.getPackageName()`
-- `NMFPackageManager.java:144` — `generateUsername(packageName)`, gated on `linux-userspace`
-- `NMFPackageManager.java:157` — the unconditional `adduser()` call
-- `NMFPackageManager.java:195-198` — the broad, log-only `catch`
-- `NMFPackageManager.java:489-546` — `isFinalVersionInstalled()`
-- `NMFPackageManager.java:543-545` — the exact name-and-version equality check, the actual gap:
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java:136`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L136) — `packageName = metadata.getPackageName()`
+- [`NMFPackageManager.java:144`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L144) — `generateUsername(packageName)`, gated on `linux-userspace`
+- [`NMFPackageManager.java:157`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L157) — the unconditional `adduser()` call
+- [`NMFPackageManager.java:195-198`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L195-L198) — the broad, log-only `catch`
+- [`NMFPackageManager.java:489-546`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L489-L546) — `isFinalVersionInstalled()`
+- [`NMFPackageManager.java:543-545`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L543-L545) — the exact name-and-version equality check, the actual gap:
   ```java
   return installedMetadata != null
           && packageName.equals(installedMetadata.getPackageName())
           && version.equals(installedMetadata.getPackageVersion());
   ```
-- `NMFPackageManager.java:833-834` — `generateUsername()`'s definition
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java:214` — where that guard is invoked at the real install-service entry point
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackagePMBackend.java:169-189` — `checkPackageIntegrity()`, the integrity-check stub — live code, unconditionally `return true` (it's the *signing* code it would call into that's commented out, see below)
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageBuilder.java:171-199` — the commented-out package-signing block itself
+- [`NMFPackageManager.java:833-834`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L833-L834) — `generateUsername()`'s definition
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java:214`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java#L214) — where that guard is invoked at the real install-service entry point
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackagePMBackend.java:169-189`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackagePMBackend.java#L169-L189) — `checkPackageIntegrity()`, the integrity-check stub — live code, unconditionally `return true` (it's the *signing* code it would call into that's commented out, see below)
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageBuilder.java:171-199`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageBuilder.java#L171-L199) — the commented-out package-signing block itself
 
 **Verification:** live-reproduced.
 
-**How to replicate:** on a Linux host with `linux-userspace` selected
-(`esa.mo.nmf.packagemanager.appsIsolation=linux-userspace`), build two
-packages that both declare `info.name=shared-name` in their
-`package-metadata.properties` but different `info.version` values and
-different content (e.g. different `pack.app.mainclass`). Install the first,
-confirm the `app-shared-name` Linux account and its `apps/shared-name/`
-directory now exist with the first package's content. Install the second.
-Check `/etc/passwd`: there's still exactly one `app-shared-name` entry.
-Check `apps/shared-name/`: it now holds both packages' jars, and its
-`start_app.sh` points at the second package's main class and jar. Neither
-install surfaced an error.
+**How to replicate:** see [`findings/01-linux-userspace-account-takeover/`](findings/01-linux-userspace-account-takeover/README.md#reproduction-steps).
 
 **Suggested fix:** before creating the OS account or writing into the App
 directory, check whether a package with this name already exists
@@ -148,52 +136,36 @@ paths) — it's just never applied to the package name itself, which is an
 equally attacker-controlled field.
 
 **Impact:** any developer able to submit a package can set `info.name` to
-something like `../../outside-target/pwned-app`, and `install()` will
-create directories and attempt file writes outside the intended install
-directories. Some of those writes fail, but the caller is still told the
-install succeeded. This is a
+a `..`-traversal string and make `install()` create a directory outside
+the intended install directories — confirmed escaping the NMF root entirely
+(`info.name=../../../../tmp/nmf-escape` created `/tmp/nmf-escape`, live on
+`release-5.1` and `v6.0`; see `findings/02-*`). The caller is still told the
+install succeeded. What currently escapes is *directory creation*, not file
+content: the aux-file writes to the traversed path are silently swallowed
+and the receipt write throws, so no attacker-chosen bytes land outside
+today. That limit is incidental — it rests on two unrelated bugs, not on
+any validation of `info.name` — so fixing either without sanitizing the
+name would turn this into an arbitrary-file write. This is a
 Supervisor-level gap — it applies before any `appsIsolation` mode takes
 effect, so it undermines filesystem boundaries regardless of which
-isolation mode is active.
+isolation mode is active. Only the relative `..`-traversal form escapes; an
+absolute path in `info.name` didn't in our testing.
 
 **Where:**
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java:136,147` — the unvalidated name flowing straight into the install path:
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java:136,147`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L136) — the unvalidated name flowing straight into the install path:
   ```java
   String packageName = metadata.getPackageName();
   ...
   File appDir = new File(Deployment.getAppsDir(), packageName);
   ```
-- `NMFPackageManager.java:205` — same pattern for the receipt filename
-- `NMFPackageManager.java:247-248` — same pattern again for the uninstall path
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/HelperNMFPackage.java:168` — `resolveInside()`, the existing traversal guard, never applied to the package name
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/metadata/Metadata.java:156-158` — `getPackageName()`, the raw, unvalidated read
+- [`NMFPackageManager.java:205`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L205) — same pattern for the receipt filename
+- [`NMFPackageManager.java:247-248`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/NMFPackageManager.java#L247-L248) — same pattern again for the uninstall path (`removeAuxiliaryFiles`, unguarded by `resolveInside`, so it would delete outside the tree; currently unreachable because uninstall is gated on a receipt that a traversal name never writes — tested, see `findings/02-*`)
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/HelperNMFPackage.java:168`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/HelperNMFPackage.java#L168) — `resolveInside()`, the existing traversal guard, never applied to the package name
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/metadata/Metadata.java:156-158`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/metadata/Metadata.java#L156-L158) — `getPackageName()`, the raw, unvalidated read
 
 **Verification:** live-reproduced.
 
-**How to replicate:** build a package whose `package-metadata.properties`
-declares `info.name=../../outside-target/pwned-app` (metadata otherwise
-valid, and its zip entries themselves non-traversing, since those are
-separately guarded). Install it against a scratch NMF root. Then:
-
-- The App's log directory is created outside `logs/`, at
-  `<nmf-root>/logs/outside-target/pwned-app/`
-  (`NMFPackageManager.java:150-151`).
-- The receipt write targets
-  `etc/installations-tracker/../../outside-target/pwned-app.receipt`. In
-  our runs it failed with a `FileNotFoundException` that `install()`'s
-  broad catch logged as `SEVERE`.
-- The App's aux files (`start_app.sh` and the `.properties` files) are
-  logged as "Creating file on: .../apps/../../outside-target/pwned-app/..."
-  but never written, because `AuxFilesGenerator.writeFile()` silently
-  swallows the `IOException`.
-- The installing client still gets a success response ("Package ...
-  installed.").
-
-So the traversal reaches outside the intended directories, and a
-half-failed install is reported as a success. Full trace in
-`findings/02-path-traversal-install/README.md`. (An absolute path in
-`info.name` doesn't escape further in our testing. Only the relative
-`..`-traversal form does.)
+**How to replicate:** see [`findings/02-path-traversal-install/`](findings/02-path-traversal-install/README.md#reproduction-steps).
 
 **Suggested fix:** apply the same traversal check already used for
 in-package file entries to the package name itself, at the point it's read
@@ -217,14 +189,14 @@ silently to the weakest of the four modes, with nothing in the boot log to
 distinguish that from an intentional `none` configuration.
 
 **Where:**
-- `core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java:120-127` — writes `config.properties`, with `apps-isolation` set at line 121
-- `BootloaderGenerator.java:133-136` — the checksum manifest is written only for the jar directories, never for `config.properties`
-- `core/nmf-linux-maven-plugin/src/main/resources/start_supervisor.sh:89` — the boot-time check, readable but not validated:
+- [`core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java:120-127`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java#L120-L127) — writes `config.properties`, with `apps-isolation` set at line 121
+- [`BootloaderGenerator.java:133-136`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-linux-maven-plugin/src/main/java/esa/mo/nmf/filesystem/BootloaderGenerator.java#L133-L136) — the checksum manifest is written only for the jar directories, never for `config.properties`
+- [`core/nmf-linux-maven-plugin/src/main/resources/start_supervisor.sh:89`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-linux-maven-plugin/src/main/resources/start_supervisor.sh#L89) — the boot-time check, readable but not validated:
   ```sh
   if [ -r "$CONFIG_FILE" ]; then
   ```
-- `core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java:57-59` — `getCurrent()`, defaults to `NONE` on anything unset/unrecognized
-- `AppsIsolationMode.java:76-95` — `isLinuxUserspace()`/`isDockerContainers()`/`isBubblewrap()`, each an exact-string match against the unvalidated value
+- [`core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java:57-59`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java#L57-L59) — `getCurrent()`, defaults to `NONE` on anything unset/unrecognized
+- [`AppsIsolationMode.java:76-95`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java#L76-L95) — `isLinuxUserspace()`/`isDockerContainers()`/`isBubblewrap()`, each an exact-string match against the unvalidated value
 
 **Verification:** live-reproduced, upgraded from source-reviewed. This
 testbed booted a real Supervisor against two separately corrupted
@@ -243,12 +215,7 @@ testbed booted a real Supervisor against two separately corrupted
   places**, not just inside `AppsIsolationMode`, to close the empty-value
   case too.
 
-**How to replicate:** generate a filesystem with any real
-`appsIsolation` mode, then edit `bootloader/config.properties` to set
-`apps-isolation` to an empty string or an unrecognized value, and boot the
-Supervisor. Every subsequently launched App runs with no isolation and
-nothing in the boot log calls this out as a problem — confirmed live for
-both an empty and an unrecognized value (see Verification above).
+**How to replicate:** see [`findings/03-config-integrity-fail-open/`](findings/03-config-integrity-fail-open/README.md#reproduction-steps).
 
 **Suggested fix, two independent pieces:** (1) add `config.properties` to
 the existing SHA256SUMS manifest, for auditability — we understand your
@@ -268,16 +235,17 @@ Every `bwrap` invocation is built with `--ro-bind / /` — the entire host
 filesystem, read-only, rather than an explicit allowlist of what the App
 actually needs — with no seccomp filter, no AppArmor profile, and no
 capability-dropping beyond bubblewrap's own default namespace unsharing.
-This is separate from the storage-bind bug you already fixed: it's a live
-hardening gap in the isolation boundary itself, not a functional bug.
+This is separate from the storage-bind bug you already fixed
+([PR #192](https://github.com/esa/nanosat-mo-framework/pull/192)): it's a
+live hardening gap in the isolation boundary itself, not a functional bug.
 
 **Impact:** a sandboxed App can read (though not write) essentially the
 entire host filesystem, and runs with the full default Linux syscall
 surface and capability set available to it.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java:72` — `assembleCommand()`
-- `AppsLauncherManagerBubblewrap.java:84` — the `--ro-bind / /` build:
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java:72`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java#L72) — `assembleCommand()`
+- [`AppsLauncherManagerBubblewrap.java:84`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java#L84) — the `--ro-bind / /` build:
   ```java
   ret.add("--ro-bind");
   ret.add("/");
@@ -287,12 +255,7 @@ surface and capability set available to it.
 **Verification:** live-reproduced — the read-exposure half specifically
 (write/delete are correctly blocked by the narrower per-App binds).
 
-**How to replicate:** launch two Apps under `bubblewrap` and have one try
-to read a file inside the other's per-App storage directory (not write —
-writes and deletes are correctly blocked by the narrower per-App binds
-`assembleCommand()` sets up). The read succeeds, confirming the read
-exposure is real in practice, not just implied by the `--ro-bind / /` flag
-in source.
+**How to replicate:** see [`findings/04-bubblewrap-rebind-root/`](findings/04-bubblewrap-rebind-root/README.md#reproduction-steps).
 
 **Suggested fix:** replace `--ro-bind / /` with an explicit allowlist of
 the paths an App genuinely needs (its own runtime, shared libraries, and
@@ -314,8 +277,8 @@ such flag exists anywhere in the `docker run` invocation, so nothing in
 this container boundary would stop one.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java:112` — `assembleCommand()`
-- `AppsLauncherManagerDocker.java:120-128` — the `docker run` flag list, `--rm` onward, with no `--pids-limit`/`--memory`/`--cpus` anywhere in it:
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java:112`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java#L112) — `assembleCommand()`
+- [`AppsLauncherManagerDocker.java:120-128`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java#L120-L128) — the `docker run` flag list, `--rm` onward, with no `--pids-limit`/`--memory`/`--cpus` anywhere in it:
   ```java
   ret.add("--rm");
   ret.add("--name");
@@ -338,9 +301,7 @@ deliberately declines to run one in this mode, because there's no
 So we've confirmed nothing would stop a resource-exhausting payload here,
 but we haven't watched one run unbounded.
 
-**How to replicate:** inspect the `docker run` flag list `assembleCommand()`
-builds for the sibling container — no `--pids-limit`/`--memory`/`--cpus`
-appears anywhere in it, unlike the Supervisor's own container.
+**How to replicate:** see [`findings/05-docker-no-pids-limit/`](findings/05-docker-no-pids-limit/README.md#reproduction-steps).
 
 **Suggested fix:** add `--pids-limit` (and ideally `--memory`/`--cpus`) to
 the sibling container's `docker run` invocation, with a sensible default
@@ -362,8 +323,8 @@ fails to launch outright — this is the upstream code path itself, not
 specific to any one image or deployment.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/LinuxUsersGroups.java:74` — `adduser()`
-- `LinuxUsersGroups.java:98-100` — the non-BusyBox `cmd2` branch, missing `--home`:
+- [`core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/LinuxUsersGroups.java:74`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/LinuxUsersGroups.java#L74) — `adduser()`
+- [`LinuxUsersGroups.java:98-100`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/LinuxUsersGroups.java#L98-L100) — the non-BusyBox `cmd2` branch, missing `--home`:
   ```java
   cmd2 = new String[]{"sudo", "adduser", "--system",
       "--shell", DEFAULT_SHELL, withGroup ? "--group" : "",
@@ -378,14 +339,18 @@ Both symptoms appear, in order. At account creation, the Supervisor logs
 launch, the App itself crashes in its `AppStorage` initialization, because
 it tries to create directories under `/nonexistent`.
 
-**How to replicate:** select `linux-userspace` on a Debian-based image and
-install any App. Account creation logs a `chgrp: cannot access
-'/nonexistent': No such file or directory` failure, and the App then fails
-to launch with a `NoSuchFileException` under `/nonexistent/.nmf-apps/`.
+**How to replicate:** see [`findings/06-adduser-no-home/`](findings/06-adduser-no-home/README.md#reproduction-steps).
 
 **Suggested fix:** pass `--home /home/<username>` (or equivalent)
 explicitly in both branches, rather than relying on each platform's
-differing default.
+differing default. Note the **same missing `--home` exists at a second call
+site**: the generated `setup_linux_userspace.sh`
+([`setup_linux_userspace.sh:46`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-linux-maven-plugin/src/main/resources/setup_linux_userspace.sh#L46),
+in `nmf-linux-maven-plugin`) creates the Supervisor's own `nmf-admin`
+account the same way, so it hits the identical bug one step earlier — see
+`docs/PROVENANCE.md`'s "New discovery, this testbed" entry. Fix both, or
+the Supervisor account stays broken even once the App-account path is
+fixed.
 
 ## 7. bubblewrap's `DEFAULT_PATH` is hardcoded, no override
 
@@ -399,19 +364,15 @@ list — a portability/deployability gap, not just a benchmarking
 inconvenience.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java:55` — the `DEFAULT_PATH` constant:
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java:55`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java#L55) — the `DEFAULT_PATH` constant:
   ```java
   private static final String DEFAULT_PATH = "/usr/local/bin:/usr/bin:/bin";
   ```
-- `AppsLauncherManagerBubblewrap.java:135` — its use in `assembleCommand()`
+- [`AppsLauncherManagerBubblewrap.java:135`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java#L135) — its use in `assembleCommand()`
 
 **Verification:** live-reproduced.
 
-**How to replicate:** launch an App under `bubblewrap` on an
-`eclipse-temurin`-based image (Java installed under
-`/opt/java/openjdk/bin`, not on the sandboxed `PATH`). The App's own
-`java` invocation fails with `java: not found` unless something symlinks
-it onto one of those three directories.
+**How to replicate:** see [`findings/07-bubblewrap-hardcoded-path/`](findings/07-bubblewrap-hardcoded-path/README.md#reproduction-steps).
 
 **Suggested fix:** derive the sandboxed `PATH` from the launching JVM's own
 `java.home`, or expose it as an overridable system property.
@@ -429,17 +390,14 @@ time on, since a value that works for one service silently doesn't resolve
 anything via the other.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java:120` — `findPackage`, filename-keyed
-- `PackageManagementProviderServiceImpl.java:183` — `install`, filename-keyed
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherProviderServiceImpl.java:288` — `runApp`, metadata-name-keyed
-- `AppsLauncherProviderServiceImpl.java:502` — `listApp`, metadata-name-keyed
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java:120`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java#L120) — `findPackage`, filename-keyed
+- [`PackageManagementProviderServiceImpl.java:183`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/PackageManagementProviderServiceImpl.java#L183) — `install`, filename-keyed
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherProviderServiceImpl.java:288`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherProviderServiceImpl.java#L288) — `runApp`, metadata-name-keyed
+- [`AppsLauncherProviderServiceImpl.java:502`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherProviderServiceImpl.java#L502) — `listApp`, metadata-name-keyed
 
 **Verification:** live-reproduced.
 
-**How to replicate:** install a package and note the filename you used;
-try to look it up via `listApp`/`runApp` using that same filename — it
-won't match, because those calls expect the metadata-derived App name
-instead.
+**How to replicate:** see [`findings/08-two-names-ux/`](findings/08-two-names-ux/README.md#reproduction-steps).
 
 **Suggested fix:** worth a one-line callout in the SDK docs wherever
 package install and App launch are described together — it cost us real
@@ -471,11 +429,11 @@ shared host path — but it isn't documented anywhere alongside
 traced back to this.
 
 **Where:**
-- `core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java:115` — `nmfHome` resolved dynamically, not hardcoded:
+- [`core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java:115`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java#L115) — `nmfHome` resolved dynamically, not hardcoded:
   ```java
   final String nmfHome = Deployment.getNMFRootDir().getAbsolutePath();
   ```
-- `AppsLauncherManagerDocker.java:127-128` — the sibling-container mount built from it:
+- [`AppsLauncherManagerDocker.java:127-128`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerDocker.java#L127-L128) — the sibling-container mount built from it:
   ```java
   ret.add("-v");
   ret.add(nmfHome + ":" + nmfHome);
@@ -492,11 +450,7 @@ It does **not** work on Docker Desktop, which has its own File Sharing
 allowlist on top of this precondition. Full trace in
 `findings/09-docker-sibling-mount-hostpath/README.md`.
 
-**How to replicate:** deploy the Supervisor's own filesystem via `COPY` at
-image-build time rather than a host bind mount (i.e. give the container's
-`nmfHome` no matching host-side directory), select `docker-containers`,
-and launch any App. The sibling `docker run` fails immediately with the
-mount-denied error above.
+**How to replicate:** see [`findings/09-docker-sibling-mount-hostpath/`](findings/09-docker-sibling-mount-hostpath/README.md#reproduction-steps).
 
 **Suggested fix:** no code defect to fix — `nmfHome` is already resolved
 dynamically, which is the right approach. This is a documentation-only
@@ -531,18 +485,15 @@ App state (including the AppStopped event it archives) can't tell a crashed
 App from a cleanly exited one.
 
 **Where:**
-- `core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/AuxFilesGenerator.java:118` — the `exit "$(cat ... 2>/dev/null || echo 0)"` line, which defaults to 0 when it can't read the code
-- `AppsLauncherManagerBubblewrap.java:84` — `--ro-bind / /`, with no `--dev /dev` anywhere in `assembleCommand()`
+- [`core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/AuxFilesGenerator.java:118`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-package-lib/src/main/java/esa/mo/nmf/nmfpackage/utils/AuxFilesGenerator.java#L118) — the `exit "$(cat ... 2>/dev/null || echo 0)"` line, which defaults to 0 when it can't read the code
+- [`AppsLauncherManagerBubblewrap.java:84`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherManagerBubblewrap.java#L84) — `--ro-bind / /`, with no `--dev /dev` anywhere in `assembleCommand()`
 
 **Verification:** live-reproduced on `release-5.1` and `v6.0`. A
 `start_app.sh` traced with `sh -x` inside the exact sandbox shows `echo 127`
 into the `.exit` file, then `cannot create /dev/null: Permission denied`,
 then `exit 0`.
 
-**How to replicate:** under `bubblewrap`, launch any App that exits
-non-zero, for example one whose `MAIN_CLASS` doesn't exist. The Supervisor
-log says `exited with code 0, classified as EXITED`, while
-`logs/app_<name>/<name>_<date>.log.exit` holds the real code.
+**How to replicate:** see [`findings/10-bubblewrap-exit-code-masked/`](findings/10-bubblewrap-exit-code-masked/README.md#reproduction-steps).
 
 **Suggested fix:** add `--dev /dev` to the bubblewrap arguments, which
 gives the sandbox a working `/dev/null` (confirmed live). Separately, the

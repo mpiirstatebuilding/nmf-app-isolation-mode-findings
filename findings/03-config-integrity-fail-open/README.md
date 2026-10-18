@@ -1,35 +1,49 @@
 # Finding 3 — `bootloader/config.properties` no integrity check at boot, fails open to no isolation
 
-**Source of truth:** root `README.md` §3 for full impact, source citations, and
-suggested fix. Nothing below restates that.
+Impact, source citations and the suggested fix are in the root
+[`README.md`](../../README.md) §3.
 
-**Severity (per source):** High, live-reproduced. It was source-reviewed
-only in the source project. This testbed was the first to confirm it live,
-and the root `README.md` table was updated in `01eab4e`.
+**Severity:** High, live-reproduced. It was source-reviewed
+only in the source project; this testbed was the first to confirm it live.
 **Classification:** fully scriptable, mode-independent.
 **Setup needed:** `docs/SETUP.md` "App-scope setup", to launch an App after
 boot.
 
 ## Reproduction steps
 
-1. Generate a filesystem for any `appsIsolation` mode.
-2. Edit the generated `bootloader/config.properties`, setting its
-   `apps-isolation` key to an empty string or an unrecognized value.
-3. Boot the Supervisor.
-4. Trace whether every subsequently launched App runs with no isolation
-   (the fail-open direction the source-only analysis predicts) and whether
-   the boot log gives any indication of the problem.
+1. Generate a `linux-userspace` filesystem. Any mode works, but
+   `linux-userspace` makes the fail-open easy to see, because a real
+   isolated launch creates an `app-<name>` account.
+2. **Before building the image** (the Dockerfile `COPY`s the filesystem
+   in), edit `$FS/nanosat-mo-framework/bootloader/config.properties`:
+   - Test A: `apps-isolation=totally-bogus-mode`
+   - Test B: `apps-isolation=` (empty)
+3. Build and start `docker/linux-userspace/` with `hello-world-5.1.nmfpack`
+   staged (`docs/SETUP.md`), then install and launch it with
+   `RunAppTrigger`.
+4. Check the boot log for any warning, then check how the App ran:
+   ```bash
+   docker exec nmf-sup sh -c 'ps aux | grep -o "appsIsolation=[^ ]*" | head -1'
+   docker exec nmf-sup sh -c 'grep app-hello-world /etc/passwd; ps -o user,args -C java'
+   ```
+   The bug: the boot log is clean, no `app-hello-world` account exists, and
+   the App's JVM runs as `nmf-admin`, the Supervisor's own account.
 
-**If the actual observed behavior differs from this prediction** (e.g. the
-Supervisor fails to start instead of failing open), that is a genuine
-finding update to report back to César. Don't silently adjust the test to
-match the prediction. Record whatever actually happens in Observed below.
+## Verifying a fix
+
+Repeat Tests A and B. A fixed Supervisor either boots into the strongest
+available mode (here, `linux-userspace`, so `app-hello-world` is created
+and the App runs as that account), or logs an explicit warning naming the
+invalid value. Check Test B separately: `start_supervisor.sh`'s own
+`APPS_ISOLATION=none` default must also change, or the empty value still
+reaches the JVM as a literal `none`.
 
 ## Observed
 
-**Result: CONFIRMED, live, 2026-09-15.** Both corruptions fail open, as
-predicted, but through two different mechanisms. Both were traced to
-source and tested separately.
+**Result: CONFIRMED, live, on `release-5.1` and `v6.0`** (SHAs per the root
+`README.md` "Verified against" lines), identical on both refs. Both
+corruptions fail open, as predicted, but through two different mechanisms.
+Both were traced to source and tested separately. Supervisor logs: [`evidence/5.1/f3-testA.log`](../../evidence/5.1/f3-testA.log) and [`evidence/6.0/f3-testA.log`](../../evidence/6.0/f3-testA.log); [`evidence/5.1/f3-testB.log`](../../evidence/5.1/f3-testB.log) and [`evidence/6.0/f3-testB.log`](../../evidence/6.0/f3-testB.log).
 
 Both tests used a filesystem built for `linux-userspace`
 (`docker/linux-userspace/`, the same image as findings 1/6/8, where
@@ -47,14 +61,14 @@ This is the code path the root `README.md` describes.
   verbatim (checked with `ps aux` inside the container). The shell
   bootloader passes any *non-empty* value through unmodified.
 - The fallthrough, traced in source:
-  - `AppsIsolationMode.getCurrent()` (`AppsIsolationMode.java:57-60`)
+  - `AppsIsolationMode.getCurrent()` ([`AppsIsolationMode.java:57-60`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/nmf/environment/AppsIsolationMode.java#L57-L60))
     returns the raw string whenever it's non-null. It never checks it
     against the four known modes.
   - So `isBubblewrap()`/`isDockerContainers()`/`isLinuxUserspace()`, each
     an exact-string `.equals()` check, all return false for
     `"totally-bogus-mode"`.
   - `AppsLauncherProviderServiceImpl.init()`
-    (`AppsLauncherProviderServiceImpl.java:136-145`) only branches on
+    ([`AppsLauncherProviderServiceImpl.java:136-145`](https://github.com/esa/nanosat-mo-framework/blob/3b5920c85185ff55e98a08aaa48b60c1f77bcdc5/core/nmf-services-impl/src/main/java/esa/mo/sm/impl/provider/AppsLauncherProviderServiceImpl.java#L136-L145)) only branches on
     `isBubblewrap()`/`isDockerContainers()`/Windows. **Everything else,
     including both `"none"` and `"linux-userspace"`, falls through to the
     same `else` branch, `new AppsLauncherManagerLinux(...)`.**
@@ -97,22 +111,3 @@ intercepts it first, discovered live.
 - Not tested: whether `get_prop`'s parsing (`sed -n
   "s/^$1=//p" "$2" | head -n 1 | tr -d '\r'`) treats a whitespace-only
   value (e.g. `apps-isolation= `) as empty. Plausible, not confirmed.
-- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
-  tip). The current pin is the root `README.md` "Verified against" line.
-
-## Re-verified 2026-10-06: 5.1 release and v6.0
-
-**Result: CONFIRMED on both**, live, same steps and environment as above.
-The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
-"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
-against each version (`docs/SETUP.md`). Raw Supervisor logs are in
-`results/reverify-2026-10/`, which is not committed.
-
-- **Test A** (`totally-bogus-mode`), identical on both refs:
-  - the JVM got `appsIsolation=totally-bogus-mode`
-  - the launcher was plain `[/bin/sh, -c, ...]`
-  - no `app-hello-world` account was created
-  - the App ran as `nmf-admin`
-- **Test B** (empty value), identical on both refs: the JVM got
-  `appsIsolation=none`, with the same no-isolation outcome.
-- In both tests, the boot log has no line mentioning the isolation value.

@@ -1,25 +1,33 @@
 # Finding 10 — under bubblewrap, every App failure is reported as a clean exit
 
-**Source of truth:** root `README.md` §10 for full impact, source citations,
-and suggested fix. Nothing below restates that.
+Impact, source citations and the suggested fix are in the root
+[`README.md`](../../README.md) §10.
 
-**Severity (per source):** Medium, live-reproduced.
+**Severity:** Medium, live-reproduced.
 **Classification:** live, environment-dependent (same `bubblewrap`
 preconditions as findings 4 and 7).
 **Setup needed:** `docs/SETUP.md` "App-scope setup", on `docker/bubblewrap/`
 run with `--security-opt seccomp=unconfined`.
 
-Found 2026-10-06 while re-running finding 7, so it was not among the nine
-findings originally sent to César.
+Found 2026-10-06 while re-running finding 7, so it wasn't among the first
+nine findings.
 
 ## Reproduction steps
 
 1. Under `bubblewrap`, install and launch an App that exits non-zero. Two
    ways:
    - finding 7's own failure: unpatched image, so `java: not found` (127)
-   - an ordinary crash: symlink `java` onto the sandbox `PATH` (as in
-     finding 4), then point the installed App's `start_app.sh` at a
-     `MAIN_CLASS` that doesn't exist (1)
+   - an ordinary crash: symlink `java` onto the sandbox `PATH` (finding 4's
+     `docker exec -u root nmf-sup ln -s /opt/java/openjdk/bin/java
+     /usr/local/bin/java`), then point the installed App's `start_app.sh`
+     at a `MAIN_CLASS` that doesn't exist, e.g.
+     ```bash
+     docker exec -u root nmf-sup sh -c \
+       'sed -i "s/^MAIN_CLASS=.*/MAIN_CLASS=does.not.Exist/" \
+        /nanosat-mo-framework/apps/<app>/start_app.sh'
+     ```
+     and launch it again without re-installing (exit 1):
+     `java -jar runapp-trigger.jar <directoryURI> track-b-app-a`
 2. Compare the Supervisor log's `process exited with code N, classified as
    ...` line with the sidecar `logs/app_<name>/<name>_<date>.log.exit` file.
 3. To see the mechanism, run the exact logged `bwrap` launcher command by
@@ -55,5 +63,13 @@ per the root `README.md` "Verified against" lines). App `track-b-app-a`
   `/dev/null` is not writable. Adding `--dev /dev` makes it writable.
 - Environment: `docker/bubblewrap/` images `nmf-testbed-bubblewrap:5.1` and
   `:6.0`, bubblewrap 0.11.1. Logs:
-  `results/reverify-2026-10/*-bubblewrap-exitcode-masking.supervisor.log`
-  (not committed).
+  [`evidence/5.1/bubblewrap-exitcode-masking.log`](../../evidence/5.1/bubblewrap-exitcode-masking.log)
+  and [`evidence/6.0/bubblewrap-exitcode-masking.log`](../../evidence/6.0/bubblewrap-exitcode-masking.log).
+
+## Verifying a fix
+
+Re-run both cases from step 1. For each, the Supervisor's `process exited
+with code N` must equal the `.exit` file's value (127, then 1), and the
+classification must be `CRASHED`, not `EXITED`. If you also change the
+script's fallback to a non-zero default, check that a clean App exit is
+still reported as code 0.

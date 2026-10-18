@@ -1,10 +1,10 @@
-# Testbed image for appsIsolation=bubblewrap (findings 4 and 7).
+# Testbed image for appsIsolation=bubblewrap (findings 4, 7 and 10).
 #
 # Base is eclipse-temurin:21-jre, unmodified -- no java symlink patch, so
 # finding 7's own bug (bubblewrap's hardcoded PATH not including
 # /opt/java/openjdk/bin) is free to surface rather than being silently
-# worked around. See docs/MIGRATION_TO_TESTBED.md section 2 and this
-# finding's own README for why that matters.
+# worked around. See findings/07-bubblewrap-hardcoded-path/README.md for
+# why that matters.
 #
 # Run requirement, not baked into this image (a `docker run` flag, not a
 # build-time one): the container needs `--security-opt seccomp=unconfined`
@@ -15,7 +15,10 @@
 #   docker build -f docker/bubblewrap/Dockerfile \
 #     -t nmf-testbed-bubblewrap:<nmf-version> \
 #     <checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
-#   docker run -d --security-opt seccomp=unconfined nmf-testbed-bubblewrap
+#   docker run -d --security-opt seccomp=unconfined nmf-testbed-bubblewrap:<nmf-version>
+#
+# See docs/SETUP.md "Building and running the Supervisor image per mode"
+# for the full build/run commands.
 
 FROM eclipse-temurin:21-jre
 

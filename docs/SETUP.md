@@ -9,13 +9,14 @@ links here rather than restating them.
 line, not restated here. Cite that same line from every source citation in
 `findings/NN-*/`.
 
-**Checkouts** live outside this repo and aren't committed:
-
-- the original clone at `/Users/User/IdeaProjects/nanosat-mo-framework-v5.1`,
-  left at the pre-release tip `0933302` for diffing
-- a `git worktree` of it at `../nanosat-mo-framework-5.1-release` (tag
-  `release-5.1`)
-- a `git worktree` of it at `../nanosat-mo-framework-v6.0` (branch `v6.0`)
+**Checkouts** of upstream NMF live outside this repo and aren't committed.
+Clone `nanosat-mo-framework` once and check out the ref you're testing (the
+SHAs and tags are on the root `README.md`'s "Verified against" line); a
+`git worktree` per ref lets you keep more than one side by side. The
+reproductions were run against worktrees named
+`../nanosat-mo-framework-5.1-release` (tag `release-5.1`) and
+`../nanosat-mo-framework-v6.0` (branch `v6.0`); any paths are fine as long
+as you point the build at them.
 
 Run `mvn clean install` in each. That puts `5.1` and `6.0-SNAPSHOT` side
 by side in `~/.m2`. v6.0 needs JDK 21+.
@@ -37,10 +38,6 @@ Observed 2026-10-06: the Supervisor logs `Unsupported Area ...
    `nmf-testbed-linux-userspace:5.1` / `:6.0`). The `docker/*/Dockerfile`s
    themselves are version-agnostic.
 
-The original one-time setup for the pre-release `v5.1` is in
-`docs/MIGRATION_TO_TESTBED.md` sections 4 and 5. It's historical; the
-steps above supersede it.
-
 ## Generating a mode's filesystem
 
 Most findings need a filesystem generated for one `appsIsolation` mode.
@@ -53,7 +50,52 @@ mvn package -Pgenerate-filesystem -Dgenerate-filesystem.appsIsolation=<mode>
 where `<mode>` is one of `none`, `linux-userspace`, `bubblewrap`,
 `docker-containers`.
 
-## App-scope setup (needed by findings 1, 2, 6, 8)
+## Building and running the Supervisor image per mode
+
+Each mode has its own Dockerfile under `docker/<mode>/`. The Dockerfile
+header comments cover the *why* (base image choice, seccomp, etc.); the
+build/run commands are here so there's one place to copy them from.
+
+The build context is the generated filesystem's parent directory
+(`.../barebone-space-filesystem/target/space-filesystem`), so the
+`COPY nanosat-mo-framework/ ...` in each Dockerfile picks it up. For the
+App-scope and cross-app findings, **stage the `.nmfpack` test packages into
+`nanosat-mo-framework/packages/` inside that context before building** (see
+"App-scope setup" below) — the Supervisor does not auto-install from
+`packages/`, and `findPackage` only sees files that are there.
+
+```bash
+FS=<checkout>/nmf-mission-barebone/barebone-space-filesystem/target/space-filesystem
+V=5.1   # or 6.0, matching the filesystem you generated
+
+# linux-userspace (findings 1, 2, 3, 6, 8)
+docker build -f docker/linux-userspace/Dockerfile -t nmf-testbed-linux-userspace:$V "$FS"
+docker run -d --name nmf-sup nmf-testbed-linux-userspace:$V
+
+# bubblewrap (findings 4, 7, 10) — needs the seccomp opt, see finding 4
+docker build -f docker/bubblewrap/Dockerfile -t nmf-testbed-bubblewrap:$V "$FS"
+docker run -d --name nmf-sup --security-opt seccomp=unconfined nmf-testbed-bubblewrap:$V
+
+# docker-containers (findings 5, 9) — Docker-outside-of-Docker, needs the
+# host docker.sock; finding 9's precondition is that the filesystem is
+# COPY'd in (no host bind mount of nmfHome), which this image already does.
+# On macOS + Docker Desktop the sibling container never starts, even with
+# the bind-mount workaround (see finding 9), so verifying a fix to finding 5
+# or 9 end-to-end needs a Linux Docker host.
+docker build -f docker/docker-containers/Dockerfile -t nmf-testbed-docker-containers:$V "$FS"
+docker run -d --name nmf-sup -v /var/run/docker.sock:/var/run/docker.sock nmf-testbed-docker-containers:$V
+```
+
+Confirm the Supervisor booted and is in the mode you expect:
+
+```bash
+docker logs nmf-sup 2>&1 | grep -m1 "supervisor started"
+docker exec nmf-sup sh -c 'ps aux | grep -o "appsIsolation=[a-z-]*" | head -1'
+```
+
+Then drive it with `RunAppTrigger` per "Docker networking" below.
+
+## App-scope setup (needed by every finding)
 
 Without a running App to test against, checks can only observe the outer
 Supervisor, not whether `appsIsolation` itself works.
@@ -68,7 +110,20 @@ Supervisor, not whether `appsIsolation` itself works.
    Confirmed working offline (`mvn -o package`) against both the `5.1` and
    `6.0-SNAPSHOT` parents on 2026-10-06; `RunAppTrigger.java` and the
    fixtures compile against either unchanged.
-3. Install + trigger it (see "Docker networking" below for the exact
+   - **Finding-specific fixtures** live under each finding's `fixtures/`
+     (e.g. findings 1 and 4). Build them the same way: run
+     `tools/set-nmf-version.sh <version>` first, then `rm -rf target &&
+     mvn -o package` in the fixture module. Finding 2's fixture has an
+     extra `build-fixture.py` post-step — see its own README.
+3. **Stage the package(s) into `packages/`.** Copy each `.nmfpack` into the
+   generated filesystem's `nanosat-mo-framework/packages/` directory
+   *before* building the Supervisor image (the Dockerfile `COPY`s the whole
+   tree in). If the Supervisor is already running, `docker cp
+   <pkg>.nmfpack nmf-sup:/nanosat-mo-framework/packages/` works too, as
+   long as the file ends up readable by the Supervisor's account. This step
+   is required: an App sitting in `packages/` is not auto-installed at boot,
+   and `findPackage` only sees what's on disk there.
+4. Install + trigger it (see "Docker networking" below for the exact
    `directoryURI` to use when the Supervisor runs in a container, which is
    every mode in this testbed):
    ```bash
@@ -107,14 +162,17 @@ docker run --rm \
   hello-world hello-world-5.1.nmfpack
 ```
 
-Confirmed live for `linux-userspace` (2026-09-15) and for `bubblewrap` and
-`docker-containers` (2026-10-06), on macOS + Docker Desktop. Each mode
-needs its own Supervisor container invocation, but the consumer side is
-the same for all three:
+The finding READMEs shorten this whole wrapper to
+`java -jar runapp-trigger.jar <directoryURI> <appName> [packageFileName]`.
+
+Confirmed live for all three modes (`linux-userspace`, `bubblewrap`,
+`docker-containers`) on macOS + Docker Desktop. Each mode needs its own
+Supervisor container invocation, but the consumer side is the same for all
+three:
 
 - finding 9 requires that the Supervisor's filesystem is NOT
   host-bind-mounted
-- findings 4/7 need `--security-opt seccomp=unconfined` and a
+- findings 4, 7 and 10 need `--security-opt seccomp=unconfined` and a
   bubblewrap-capable host
 
 **Tried and rejected:**
@@ -153,14 +211,23 @@ outcomes, not one:
   write and delete should correctly fail. Scoring only write/delete would
   miss the read-exposure gap entirely.
 
+With this testbed's fixtures (`findings/04-*/fixtures/track-b-app-a/` and
+`track-b-app-b/`), stage both `.nmfpack`s into `packages/`, then run
+`RunAppTrigger` twice, in this order (same `docker run` wrapper as above):
+
+```bash
+java -jar runapp-trigger.jar <directoryURI> track-b-app-a track-b-app-a-1.0.0.nmfpack
+java -jar runapp-trigger.jar <directoryURI> track-b-app-b track-b-app-b-1.0.0.nmfpack
+```
+
+The first run makes App A write its marker. The second makes App B try to
+read, write and delete it, and print `TrackBAppB results:` with one line
+per outcome to its App log under `logs/app_track-b-app-b/`.
+
 Avoid giving App B a name that's a substring of App A's name — process/
 container name-matching can otherwise merge the two Apps into one handle.
 
-The App-scope and Track B procedures were validated live end-to-end in the source project
-(all four `appsIsolation` modes, 2026-08-29) before migration; see
-`docs/PROVENANCE.md` for the one piece of upstream context (PR #192) that
-made live `bubblewrap` app-scope verification possible at all. Full
-harness-side fix history lives in the source project's
-`FLATSAT_READINESS.md` and isn't re-carried here — it documents a
-benchmarking harness this testbed deliberately doesn't reuse (see
-migration doc section 2).
+The App-scope and Track B procedures were validated live end-to-end in the
+source project (all four `appsIsolation` modes, 2026-08-29) before this
+testbed was built. See `docs/PROVENANCE.md` for PR #192, the upstream fix
+that made live `bubblewrap` app-scope verification possible at all.

@@ -1,23 +1,25 @@
 # Finding 9 — `docker-containers`'s sibling-container mount silently requires a host-bind-mounted Supervisor filesystem
 
-**Source of truth:** root `README.md` §9 for full impact, source citations, and
-suggested fix. Nothing below restates that.
+Impact, source citations and the suggested fix are in the root
+[`README.md`](../../README.md) §9.
 
-**Severity (per source):** Doc gap, live-reproduced; workaround also
-confirmed live.
+**Severity:** Doc gap, live-reproduced. The bind-mount workaround worked
+on the source project's Linux host, but not on macOS + Docker Desktop (see
+Observed).
 **Classification:** live, needs Docker daemon.
 **Setup needed:** `docs/SETUP.md` "App-scope setup", on
 `docker/docker-containers/`.
 
 ## Reproduction steps
 
-1. Deploy the Supervisor's own filesystem via `COPY` at image-build time
-   rather than a host bind mount (i.e. give the container's `nmfHome` no
-   matching host-side directory).
-2. Select `docker-containers` mode and launch any App (`docs/SETUP.md`
-   "App-scope setup").
-3. Confirm the sibling `docker run` fails immediately with an error
-   resembling:
+1. Start `docker/docker-containers/` with `hello-world-5.1.nmfpack` staged
+   (`docs/SETUP.md`). That image `COPY`s the filesystem in, so the
+   container's `nmfHome` has no matching host directory.
+2. Install and launch the App with `RunAppTrigger`. The Supervisor logs
+   `process exited with code 125, classified as CRASHED`.
+3. NMF doesn't log the child's stderr, so re-run the logged `docker run`
+   command by hand inside the Supervisor container to see the daemon
+   error. It resembles:
    ```
    docker: Error response from daemon: mounts denied:
    The path <nmfHome> is not shared from the host and is not known to Docker.
@@ -25,9 +27,11 @@ confirmed live.
 
 ## Observed
 
-**Result: CONFIRMED, live, 2026-09-15.** The core bug reproduces exactly as
-predicted, byte-for-byte. The workaround did **not** work on this host,
-which is a real, host-specific difference, recorded as observed.
+**Result: CONFIRMED, live, on `release-5.1` and `v6.0`** (SHAs per the root
+`README.md` "Verified against" lines), identical on both refs. The core bug
+reproduces exactly as predicted, byte-for-byte. The workaround did **not**
+work on this host, which is a real, host-specific difference, recorded as
+observed. Supervisor logs: [`evidence/5.1/docker-containers-f5-f9.log`](../../evidence/5.1/docker-containers-f5-f9.log) and [`evidence/6.0/docker-containers-f5-f9.log`](../../evidence/6.0/docker-containers-f5-f9.log).
 
 - **The bug:**
   - The Supervisor's filesystem was deployed via plain `COPY` at
@@ -67,22 +71,14 @@ which is a real, host-specific difference, recorded as observed.
     wouldn't hit this. That's consistent with the workaround having worked
     in the source project.
 - **Host-dependent, not a retraction.** The doc-gap bug itself is fully
-  confirmed. Only the workaround's *portability* turned out to depend on
-  the host. The root `README.md` §9 notes this.
-- Upstream SHA for this 2026-09-15 run: `0933302` (pre-release `v5.1`
-  tip). The current pin is the root `README.md` "Verified against" line.
+  confirmed (the sibling `docker run` exits `125`; a manual re-run inside
+  the Supervisor container gives the same "mounts denied" error). Only the
+  workaround's *portability* turned out to depend on the host — that
+  bind-mount workaround test is macOS + Docker Desktop specific. The root
+  `README.md` §9 notes this.
 
-## Re-verified 2026-10-06: 5.1 release and v6.0
+## Verifying a fix
 
-**Result: CONFIRMED on both**, live, same steps and environment as above.
-The refs tested were `release-5.1` and `v6.0`; see the root `README.md`
-"Verified against" lines for the SHAs. Tooling and fixtures were rebuilt
-against each version (`docs/SETUP.md`). Raw Supervisor logs are in
-`results/reverify-2026-10/`, which is not committed.
-
-- The core bug is identical on both refs. The sibling `docker run` exits
-  `125`, and a manual re-run inside the Supervisor container gives the same
-  "mounts denied: The path /nanosat-mo-framework is not shared from the host
-  and is not known to Docker." error.
-- The bind-mount workaround test (macOS + Docker Desktop specific, see
-  above) was not repeated this round.
+The suggested fix is documentation only. Check that the `docker-containers`
+mode docs state the host-bind-mount precondition, plus the extra Docker
+Desktop File Sharing caveat if you want to cover macOS developers.

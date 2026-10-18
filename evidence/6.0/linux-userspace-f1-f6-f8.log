@@ -1,0 +1,209 @@
+2026-10-06 10:41:31 BOOTLOADER INITIALISATION nmf-home: /nanosat-mo-framework
+2026-10-06 10:41:31 BOOTLOADER INITIALISATION config: /nanosat-mo-framework/bootloader/config.properties
+2026-10-06 10:41:31 BOOTLOADER INITIALISATION restart-type: cold
+2026-10-06 10:41:31 BOOTLOADER INITIALISATION fallback-state: rung=primary failed-attempts=0
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK directory bootloader
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK directory etc
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK directory jars-nmf
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK directory jars-mission
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK directory logs
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK logs writable
+2026-10-06 10:41:31 BOOTLOADER SELF-TESTS OK free-disk (45597976 KB)
+2026-10-06 10:41:31 BOOTLOADER BASELINE-SELECTION primary: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:41:31 BOOTLOADER BASELINE-SELECTION secondary: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:41:31 BOOTLOADER BASELINE-SELECTION factory: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:41:31 BOOTLOADER BASELINE-SELECTION selected: primary
+2026-10-06 10:41:32 BOOTLOADER INTEGRITY-TEST OK jars-nmf/6.0-SNAPSHOT
+2026-10-06 10:41:32 BOOTLOADER INTEGRITY-TEST OK jars-mission/6.0-SNAPSHOT
+2026-10-06 10:41:32 BOOTLOADER INTEGRITY-TEST OK java-runtime (java)
+2026-10-06 10:41:32 BOOTLOADER EXECUTION supervisor started: pid=141 main-class=esa.mo.nmf.mission.barebone.BareboneSupervisorImpl
+2026-10-06 10:41:32.226 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: 
+------------
+NanoSat MO Framework
+OS: Linux (version: 6.12.76-linuxkit)
+Running as User: nmf-admin
+Java: OpenJDK Runtime Environment (version: 21.0.12+8-LTS)
+NMF version: 6.0-SNAPSHOT
+------------
+
+2026-10-06 10:41:32.284 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Starting Archive Backend in a dedicated thread...
+2026-10-06 10:41:32.286 esa.mo.com.impl.archive.db.DatabaseBackend startDatabaseDriver
+INFO: Attempting to establish a connection to the database:
+ >> jdbc:sqlite:/home/nmf-admin/.nmf-apps/nanosat-mo-supervisor/nmf-internal/comArchive_v6.db
+2026-10-06 10:41:32.288 esa.mo.nmf.NMFProvider$1 run
+INFO: The MO Areas were loaded in: 27 ms
+2026-10-06 10:41:32.301 org.ccsds.moims.mo.mal.transport.MALTransportFactory newFactory
+INFO: New transport factory registered with classname: esa.mo.mal.transport.tcpip.TCPIPTransportFactoryImpl
+2026-10-06 10:41:32.306 org.ccsds.moims.mo.mal.encoding.MALElementStreamFactory newFactory
+INFO: New encoding factory registered with classname: esa.mo.mal.encoder.binary.fixed.FixedBinaryStreamFactory
+2026-10-06 10:41:32.314 esa.mo.mal.transport.tcpip.TCPIPTransport createTransportAddress
+INFO: TCP/IP Transport address: 172.17.0.2:1024
+2026-10-06 10:41:32.321 esa.mo.com.impl.provider.ArchiveProviderServiceImpl init
+INFO: Archive service: READY! (40 ms)
+2026-10-06 10:41:32.322 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (0 ms)
+2026-10-06 10:41:32.328 esa.mo.sm.impl.provider.HeartbeatProviderServiceImpl init
+INFO: Heartbeat service: READY! (6 ms)
+2026-10-06 10:41:32.329 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (0 ms)
+2026-10-06 10:41:32.332 esa.mo.sm.impl.provider.AppsLauncherManager <init>
+INFO: Property not set: esa.mo.sm.impl.provider.appslauncher.FolderLocation 
+Using default apps directory: ../../apps
+2026-10-06 10:41:32.345 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl init
+INFO: Apps Launcher service: READY! (15 ms)
+2026-10-06 10:41:32.352 esa.mo.sm.impl.provider.CommandExecutorProviderServiceImpl init
+INFO: Command Executor service: READY! (6 ms)
+2026-10-06 10:41:32.353 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl init
+INFO: Package Management service: READY! (0 ms)
+2026-10-06 10:41:32.360 esa.mo.com.impl.provider.ArchiveSyncProviderServiceImpl init
+INFO: ArchiveSync service: READY! (1 ms)
+2026-10-06 10:41:32.370 esa.mo.mc.impl.provider.ParameterProviderServiceImpl init
+INFO: Parameter service READY! (1 ms)
+2026-10-06 10:41:32.374 esa.mo.mc.impl.provider.ActionProviderServiceImpl init
+INFO: Action service READY! (3 ms)
+2026-10-06 10:41:32.377 esa.mo.mc.impl.provider.AlertProviderServiceImpl init
+INFO: Alert service READY! (2 ms)
+2026-10-06 10:41:32.386 esa.mo.mc.impl.provider.AggregationProviderServiceImpl init
+INFO: Aggregation service READY! (7 ms)
+2026-10-06 10:41:32.386 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Loading previous configurations...
+2026-10-06 10:41:32.429 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Archive Backend started in 145 ms! Initializing Fast classes...
+2026-10-06 10:41:32.437 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: The Fast classes were initialized in 6 ms
+2026-10-06 10:41:32.504 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Populating Directory service...
+2026-10-06 10:41:32.513 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor writeBootConfirmation
+INFO: Boot confirmation marker written: /nanosat-mo-framework/bootloader/boot-confirmed
+2026-10-06 10:41:32.514 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: NanoSat MO Supervisor initialized in 0.288 seconds!
+2026-10-06 10:41:32.515 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: URI: maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory
+
+2026-10-06 10:41:37.849 esa.mo.mal.transport.tcpip.TCPIPServerConnectionListener run
+INFO: New TCP/IP client connected! From: 172.17.0.3:54128
+2026-10-06 10:41:38.096 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl install
+INFO: Installing: hello-world-6.0-SNAPSHOT.nmfpack
+2026-10-06 10:41:38.100 esa.mo.nmf.nmfpackage.NMFPackagePMBackend install
+INFO: Installing the package...
+Package name: hello-world-6.0-SNAPSHOT.nmfpack
+Package location: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+--------------
+2026-10-06 10:41:38.102 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Reading the package on: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+2026-10-06 10:41:38.119 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Copying the files to the new locations...
+   >> Copying file to: /nanosat-mo-framework/apps/hello-world/hello-world-6.0-SNAPSHOT.jar
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/start_app.sh
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/transport.properties
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/provider.properties
+2026-10-06 10:41:38.357 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo adduser --system --shell /bin/bash --group app-hello-world
+
+2026-10-06 10:41:38.374 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: The permissions of the User Home directory could not be set for username: app-hello-world
+java.io.IOException: There was an error with code 1. For command:
+ >> sudo chgrp --recursive nmf-admin /nonexistent
+chgrp: cannot access '/nonexistent': No such file or directory
+
+Error:
+
+----
+
+2026-10-06 10:41:38.383 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo chgrp --recursive app-hello-world /nanosat-mo-framework/apps/hello-world
+
+2026-10-06 10:41:38.386 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: chmod -R 750 /nanosat-mo-framework/apps/hello-world
+
+2026-10-06 10:41:38.393 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo chgrp --recursive app-hello-world /nanosat-mo-framework/logs/app_hello-world
+
+2026-10-06 10:41:38.395 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: chmod -R 770 /nanosat-mo-framework/logs/app_hello-world
+
+2026-10-06 10:41:38.411 esa.mo.sm.impl.provider.AppsLauncherManager refreshAvailableAppsList
+INFO: New app found! Adding new app: hello-world
+2026-10-06 10:41:38.425 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Package successfully installed in 321 ms!
+From: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+--------------
+2026-10-06 10:41:38.814 esa.mo.mal.transport.gen.util.MessagePoller run
+INFO: (2) Client closing connection: maltcp://172.17.0.3:1024
+2026-10-06 10:41:38.814 esa.mo.mal.transport.gen.sending.ConcurrentMessageSender terminate
+INFO: Terminating all processing threads for sender for URI: maltcp://172.17.0.3:1024
+2026-10-06 10:41:39.518 esa.mo.mal.transport.tcpip.TCPIPServerConnectionListener run
+INFO: New TCP/IP client connected! From: 172.17.0.3:53349
+2026-10-06 10:41:39.566 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl runApp
+INFO: runApp received with arguments: [1]
+2026-10-06 10:41:39.577 esa.mo.sm.impl.provider.AppsLauncherManager startAppProcess
+INFO: Initializing 'hello-world' App!
+In directory: /nanosat-mo-framework/apps/hello-world
+Using launcher command: [sudo, su, -, app-hello-world, -c, cd /nanosat-mo-framework/apps/hello-world;PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin JAVA_OPTS=-Desa.mo.nmf.centralDirectoryURI=maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory ./start_app.sh]
+2026-10-06 10:41:39.837 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: The process exited with code 1 and objId: 1
+2026-10-06 10:41:39.838 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: App 'hello-world' (id=1) process exited with code 1, classified as CRASHED.
+2026-10-06 10:41:39.982 esa.mo.mal.transport.gen.util.MessagePoller run
+INFO: (2) Client closing connection: maltcp://172.17.0.3:1024
+2026-10-06 10:41:39.982 esa.mo.mal.transport.gen.sending.ConcurrentMessageSender terminate
+INFO: Terminating all processing threads for sender for URI: maltcp://172.17.0.3:1024
+2026-10-06 10:41:48.758 esa.mo.mal.transport.tcpip.TCPIPServerConnectionListener run
+INFO: New TCP/IP client connected! From: 172.17.0.3:62710
+2026-10-06 10:41:48.842 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl install
+INFO: Installing: hello-world-5.2-TEST.nmfpack
+2026-10-06 10:41:48.844 esa.mo.nmf.nmfpackage.NMFPackagePMBackend install
+INFO: Installing the package...
+Package name: hello-world-5.2-TEST.nmfpack
+Package location: /nanosat-mo-framework/packages/hello-world-5.2-TEST.nmfpack
+--------------
+2026-10-06 10:41:48.845 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Reading the package on: /nanosat-mo-framework/packages/hello-world-5.2-TEST.nmfpack
+2026-10-06 10:41:48.847 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Copying the files to the new locations...
+   >> Copying file to: /nanosat-mo-framework/apps/hello-world/hello-world-5.2-TEST.jar
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/start_app.sh
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/transport.properties
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/provider.properties
+2026-10-06 10:41:48.923 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo adduser --system --shell /bin/bash --group app-hello-world
+
+2026-10-06 10:41:48.934 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: The permissions of the User Home directory could not be set for username: app-hello-world
+java.io.IOException: There was an error with code 1. For command:
+ >> sudo chgrp --recursive nmf-admin /nonexistent
+chgrp: cannot access '/nonexistent': No such file or directory
+
+Error:
+
+----
+
+2026-10-06 10:41:48.944 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo chgrp --recursive app-hello-world /nanosat-mo-framework/apps/hello-world
+
+2026-10-06 10:41:48.946 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: chmod -R 750 /nanosat-mo-framework/apps/hello-world
+
+2026-10-06 10:41:48.952 esa.mo.nmf.environment.LinuxUsersGroups printCommandAndOutput
+INFO: Executed command: sudo chgrp --recursive app-hello-world /nanosat-mo-framework/logs/app_hello-world
+
+2026-10-06 10:41:48.957 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Package successfully installed in 112 ms!
+From: /nanosat-mo-framework/packages/hello-world-5.2-TEST.nmfpack
+--------------
+2026-10-06 10:41:48.974 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl runApp
+INFO: runApp received with arguments: [1]
+2026-10-06 10:41:48.977 esa.mo.sm.impl.provider.AppsLauncherManager startAppProcess
+INFO: Initializing 'hello-world' App!
+In directory: /nanosat-mo-framework/apps/hello-world
+Using launcher command: [sudo, su, -, app-hello-world, -c, cd /nanosat-mo-framework/apps/hello-world;PATH=/opt/java/openjdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin JAVA_OPTS=-Desa.mo.nmf.centralDirectoryURI=maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory ./start_app.sh]
+2026-10-06 10:41:49.184 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: The process exited with code 1 and objId: 1
+2026-10-06 10:41:49.185 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: App 'hello-world' (id=1) process exited with code 1, classified as CRASHED.
+2026-10-06 10:41:49.338 esa.mo.mal.transport.gen.util.MessagePoller run
+INFO: (2) Client closing connection: maltcp://172.17.0.3:1024
+2026-10-06 10:41:49.339 esa.mo.mal.transport.gen.sending.ConcurrentMessageSender terminate
+INFO: Terminating all processing threads for sender for URI: maltcp://172.17.0.3:1024
