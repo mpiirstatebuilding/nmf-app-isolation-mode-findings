@@ -143,7 +143,7 @@ the intended install directories — confirmed escaping the NMF root entirely
 install succeeded.
 
 File content escapes too, as soon as any other package has been installed
-before. Re-tested on `release-5.1` from a fresh setup: with
+before. Re-tested on `release-5.1` and `v6.0` from a fresh setup: with
 `etc/installations-tracker/` already created by an ordinary install, the
 traversal package's installation receipt was written to
 `/tmp/nmf-escape.receipt`, outside the NMF root. The file name always ends

@@ -203,10 +203,12 @@ and [`evidence/6.0/f2-deeptraversal-escape.log`](../../evidence/6.0/f2-deeptrave
 
 The runs above each installed a traversal package on a Supervisor that had
 never installed anything. A clean-room re-run of the whole testbed on
-`release-5.1` (fresh NMF clone, fresh testbed clone, empty Maven
-repository, image `nmf-testbed-linux-userspace:5.1-fresh`) installed
+`release-5.1` and on `v6.0` (fresh NMF clone at the pinned SHA, fresh
+testbed clone, empty Maven repository, images
+`nmf-testbed-linux-userspace:5.1-fresh` and `:6.0-fresh`) installed
 `hello-world` first, for findings 8, 1 and 6, and then both traversal
-packages in the same container. `v6.0` hasn't been re-run this way.
+packages in the same container. The results were identical on both refs.
+The file sizes below are from 5.1; on 6.0 they were 490 and 486 bytes.
 
 - Both installs logged `Package successfully installed`, with no `SEVERE`
   line, and the client got "Package ... installed." for each.
@@ -240,8 +242,9 @@ packages in the same container. `v6.0` hasn't been re-run this way.
 **Net:** a crafted `info.name` escapes the NMF root. It creates
 directories, and after any earlier install it also writes its receipt
 there, while the client is told the install succeeded. Severity stays
-High. Supervisor log:
-[`evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log`](../../evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log).
+High. Supervisor logs:
+[`evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log`](../../evidence/5.1/fresh-linux-userspace-f8-f1-f6-f2.log)
+and [`evidence/6.0/fresh-linux-userspace-f8-f1-f6-f2.log`](../../evidence/6.0/fresh-linux-userspace-f8-f1-f6-f2.log).
 
 ## Verifying a fix
 
