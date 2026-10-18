@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Headless MAL consumer that calls AppsLauncher.runApp() against a running
+    NanoSat MO Supervisor — the tooling this testbed uses to trigger an App
+    per finding without a manual CTT click. See docs/SETUP.md.
+
+    Inheriting the NMF parent POM gives us managed versions for all NMF/MAL
+    dependencies — the same approach used by the NMF CLI tool.
+  -->
+
+  <parent>
+    <groupId>int.esa.nmf</groupId>
+    <artifactId>nanosat-mo-framework</artifactId>
+    <version>5.1</version>
+    <!-- Relative path empty: resolved from local Maven repo after `mvn install`
+         on the root nanosat-mo-framework pom. -->
+    <relativePath/>
+  </parent>
+
+  <groupId>esa.mo.nmf.bench</groupId>
+  <artifactId>runapp-trigger</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <!--
+      nmf-composites is the single NMF dependency the CLI tool uses. It
+      transitively brings in:
+        - GroundMOAdapterImpl / NMFConsumer  (ground-side connection helpers)
+        - SMServicesConsumer / AppsLauncherConsumerServiceImpl / AppsLauncherStub
+        - All MAL + COM + SM service APIs
+        - TCPIP transport binding (registered via ServiceLoader)
+    -->
+    <dependency>
+      <groupId>int.esa.nmf.core</groupId>
+      <artifactId>nmf-composites</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!--
+      RunAppTrigger.java lives alongside this pom (module root) rather than
+      in the conventional src/main/java tree, so we point Maven's source root
+      here.
+    -->
+    <sourceDirectory>${project.basedir}</sourceDirectory>
+    <finalName>runapp-trigger</finalName>
+    <plugins>
+      <!-- Build a single runnable fat JAR for docs/SETUP.md's one-liner -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <!-- Pins the output name to runapp-trigger-jar-with-dependencies.jar
+               (no version segment) regardless of <version> bumps above, so it
+               doesn't drift out of sync with the fixed filename used in
+               docs/SETUP.md and the findings/ writeups. -->
+          <finalName>runapp-trigger</finalName>
+          <archive>
+            <manifest>
+              <mainClass>esa.mo.nmf.bench.RunAppTrigger</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,121 @@
+2026-10-06 10:43:35 BOOTLOADER INITIALISATION nmf-home: /nanosat-mo-framework
+2026-10-06 10:43:35 BOOTLOADER INITIALISATION config: /nanosat-mo-framework/bootloader/config.properties
+2026-10-06 10:43:35 BOOTLOADER INITIALISATION restart-type: cold
+2026-10-06 10:43:35 BOOTLOADER INITIALISATION fallback-state: rung=primary failed-attempts=0
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK directory bootloader
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK directory etc
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK directory jars-nmf
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK directory jars-mission
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK directory logs
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK logs writable
+2026-10-06 10:43:35 BOOTLOADER SELF-TESTS OK free-disk (45597972 KB)
+2026-10-06 10:43:35 BOOTLOADER BASELINE-SELECTION primary: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:43:35 BOOTLOADER BASELINE-SELECTION secondary: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:43:35 BOOTLOADER BASELINE-SELECTION factory: nmf=6.0-SNAPSHOT mission=6.0-SNAPSHOT java=system
+2026-10-06 10:43:35 BOOTLOADER BASELINE-SELECTION selected: primary
+2026-10-06 10:43:35 BOOTLOADER INTEGRITY-TEST OK jars-nmf/6.0-SNAPSHOT
+2026-10-06 10:43:35 BOOTLOADER INTEGRITY-TEST OK jars-mission/6.0-SNAPSHOT
+2026-10-06 10:43:35 BOOTLOADER INTEGRITY-TEST OK java-runtime (java)
+2026-10-06 10:43:35 BOOTLOADER EXECUTION supervisor started: pid=145 main-class=esa.mo.nmf.mission.barebone.BareboneSupervisorImpl
+2026-10-06 10:43:36.123 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: 
+------------
+NanoSat MO Framework
+OS: Linux (version: 6.12.76-linuxkit)
+Running as User: nmf
+Java: OpenJDK Runtime Environment (version: 21.0.12+8-LTS)
+NMF version: 6.0-SNAPSHOT
+------------
+
+2026-10-06 10:43:36.215 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Starting Archive Backend in a dedicated thread...
+2026-10-06 10:43:36.219 esa.mo.com.impl.archive.db.DatabaseBackend startDatabaseDriver
+INFO: Attempting to establish a connection to the database:
+ >> jdbc:sqlite:/home/nmf/.nmf-apps/nanosat-mo-supervisor/nmf-internal/comArchive_v6.db
+2026-10-06 10:43:36.222 esa.mo.nmf.NMFProvider$1 run
+INFO: The MO Areas were loaded in: 49 ms
+2026-10-06 10:43:36.316 org.ccsds.moims.mo.mal.transport.MALTransportFactory newFactory
+INFO: New transport factory registered with classname: esa.mo.mal.transport.tcpip.TCPIPTransportFactoryImpl
+2026-10-06 10:43:36.338 org.ccsds.moims.mo.mal.encoding.MALElementStreamFactory newFactory
+INFO: New encoding factory registered with classname: esa.mo.mal.encoder.binary.fixed.FixedBinaryStreamFactory
+2026-10-06 10:43:36.361 esa.mo.mal.transport.tcpip.TCPIPTransport createTransportAddress
+INFO: TCP/IP Transport address: 172.17.0.2:1024
+2026-10-06 10:43:36.386 esa.mo.com.impl.provider.ArchiveProviderServiceImpl init
+INFO: Archive service: READY! (168 ms)
+2026-10-06 10:43:36.388 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (2 ms)
+2026-10-06 10:43:36.395 esa.mo.sm.impl.provider.HeartbeatProviderServiceImpl init
+INFO: Heartbeat service: READY! (7 ms)
+2026-10-06 10:43:36.397 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (1 ms)
+2026-10-06 10:43:36.399 esa.mo.sm.impl.provider.AppsLauncherManager <init>
+INFO: Property not set: esa.mo.sm.impl.provider.appslauncher.FolderLocation 
+Using default apps directory: ../../apps
+2026-10-06 10:43:36.401 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl init
+INFO: Apps Launcher service: READY! (3 ms)
+2026-10-06 10:43:36.436 esa.mo.sm.impl.provider.CommandExecutorProviderServiceImpl init
+INFO: Command Executor service: READY! (32 ms)
+2026-10-06 10:43:36.442 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl init
+INFO: Package Management service: READY! (2 ms)
+2026-10-06 10:43:36.453 esa.mo.com.impl.provider.ArchiveSyncProviderServiceImpl init
+INFO: ArchiveSync service: READY! (1 ms)
+2026-10-06 10:43:36.475 esa.mo.mc.impl.provider.ParameterProviderServiceImpl init
+INFO: Parameter service READY! (3 ms)
+2026-10-06 10:43:36.481 esa.mo.mc.impl.provider.ActionProviderServiceImpl init
+INFO: Action service READY! (5 ms)
+2026-10-06 10:43:36.488 esa.mo.mc.impl.provider.AlertProviderServiceImpl init
+INFO: Alert service READY! (4 ms)
+2026-10-06 10:43:36.495 esa.mo.mc.impl.provider.AggregationProviderServiceImpl init
+INFO: Aggregation service READY! (5 ms)
+2026-10-06 10:43:36.495 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Loading previous configurations...
+2026-10-06 10:43:36.606 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Archive Backend started in 391 ms! Initializing Fast classes...
+2026-10-06 10:43:36.616 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: The Fast classes were initialized in 9 ms
+2026-10-06 10:43:36.750 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Populating Directory service...
+2026-10-06 10:43:36.767 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor writeBootConfirmation
+INFO: Boot confirmation marker written: /nanosat-mo-framework/bootloader/boot-confirmed
+2026-10-06 10:43:36.768 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: NanoSat MO Supervisor initialized in 0.644 seconds!
+2026-10-06 10:43:36.768 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: URI: maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory
+
+2026-10-06 10:43:41.493 esa.mo.mal.transport.tcpip.TCPIPServerConnectionListener run
+INFO: New TCP/IP client connected! From: 172.17.0.3:55470
+2026-10-06 10:43:41.604 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl install
+INFO: Installing: hello-world-6.0-SNAPSHOT.nmfpack
+2026-10-06 10:43:41.605 esa.mo.nmf.nmfpackage.NMFPackagePMBackend install
+INFO: Installing the package...
+Package name: hello-world-6.0-SNAPSHOT.nmfpack
+Package location: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+--------------
+2026-10-06 10:43:41.606 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Reading the package on: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+2026-10-06 10:43:41.617 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Copying the files to the new locations...
+   >> Copying file to: /nanosat-mo-framework/apps/hello-world/hello-world-6.0-SNAPSHOT.jar
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/start_app.sh
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/transport.properties
+   >> Creating file on: /nanosat-mo-framework/apps/hello-world/provider.properties
+2026-10-06 10:43:41.634 esa.mo.sm.impl.provider.AppsLauncherManager refreshAvailableAppsList
+INFO: New app found! Adding new app: hello-world
+2026-10-06 10:43:41.647 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Package successfully installed in 37 ms!
+From: /nanosat-mo-framework/packages/hello-world-6.0-SNAPSHOT.nmfpack
+--------------
+2026-10-06 10:43:41.774 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl runApp
+INFO: runApp received with arguments: [1]
+2026-10-06 10:43:41.788 esa.mo.sm.impl.provider.AppsLauncherManager startAppProcess
+INFO: Initializing 'hello-world' App!
+In directory: /nanosat-mo-framework/apps/hello-world
+Using launcher command: [docker, run, --rm, --name, nmf-app-hello-world, --network, host, -v, /nanosat-mo-framework:/nanosat-mo-framework, -w, /nanosat-mo-framework/apps/hello-world, -e, JAVA_OPTS=-Desa.mo.nmf.centralDirectoryURI=maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory, eclipse-temurin:21-jre, /bin/sh, -c, ./start_app.sh]
+2026-10-06 10:43:41.994 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: The process exited with code 125 and objId: 1
+2026-10-06 10:43:41.996 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl$CallbacksImpl processStopped
+INFO: App 'hello-world' (id=1) process exited with code 125, classified as CRASHED.
+2026-10-06 10:43:42.168 esa.mo.mal.transport.gen.util.MessagePoller run
+INFO: (2) Client closing connection: maltcp://172.17.0.3:1024
+2026-10-06 10:43:42.169 esa.mo.mal.transport.gen.sending.ConcurrentMessageSender terminate
+INFO: Terminating all processing threads for sender for URI: maltcp://172.17.0.3:1024

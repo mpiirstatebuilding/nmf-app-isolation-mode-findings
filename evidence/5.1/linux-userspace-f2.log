@@ -1,0 +1,119 @@
+2026-10-06 10:39:07 BOOTLOADER INITIALISATION nmf-home: /nanosat-mo-framework
+2026-10-06 10:39:07 BOOTLOADER INITIALISATION config: /nanosat-mo-framework/bootloader/config.properties
+2026-10-06 10:39:07 BOOTLOADER INITIALISATION restart-type: cold
+2026-10-06 10:39:07 BOOTLOADER INITIALISATION fallback-state: rung=primary failed-attempts=0
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK directory bootloader
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK directory etc
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK directory jars-nmf
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK directory jars-mission
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK directory logs
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK logs writable
+2026-10-06 10:39:07 BOOTLOADER SELF-TESTS OK free-disk (45597996 KB)
+2026-10-06 10:39:07 BOOTLOADER BASELINE-SELECTION primary: nmf=5.1 mission=5.1 java=system
+2026-10-06 10:39:07 BOOTLOADER BASELINE-SELECTION secondary: nmf=5.1 mission=5.1 java=system
+2026-10-06 10:39:07 BOOTLOADER BASELINE-SELECTION factory: nmf=5.1 mission=5.1 java=system
+2026-10-06 10:39:07 BOOTLOADER BASELINE-SELECTION selected: primary
+2026-10-06 10:39:07 BOOTLOADER INTEGRITY-TEST OK jars-nmf/5.1
+2026-10-06 10:39:07 BOOTLOADER INTEGRITY-TEST OK jars-mission/5.1
+2026-10-06 10:39:08 BOOTLOADER INTEGRITY-TEST OK java-runtime (java)
+2026-10-06 10:39:08 BOOTLOADER EXECUTION supervisor started: pid=141 main-class=esa.mo.nmf.mission.barebone.BareboneSupervisorImpl
+2026-10-06 10:39:08.235 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: 
+------------
+NanoSat MO Framework
+OS: Linux (version: 6.12.76-linuxkit)
+Running as User: nmf-admin
+Java: OpenJDK Runtime Environment (version: 21.0.12+8-LTS)
+NMF version: 5.1
+------------
+
+2026-10-06 10:39:08.294 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Starting Archive Backend in a dedicated thread...
+2026-10-06 10:39:08.295 esa.mo.com.impl.archive.db.DatabaseBackend startDatabaseDriver
+INFO: Attempting to establish a connection to the database:
+ >> jdbc:sqlite:/home/nmf-admin/.nmf-apps/nanosat-mo-supervisor/nmf-internal/comArchive_v5.db
+2026-10-06 10:39:08.297 esa.mo.nmf.NMFProvider$1 run
+INFO: The MO Areas were loaded in: 30 ms
+2026-10-06 10:39:08.318 org.ccsds.moims.mo.mal.transport.MALTransportFactory newFactory
+INFO: New transport factory registered with classname: esa.mo.mal.transport.tcpip.TCPIPTransportFactoryImpl
+2026-10-06 10:39:08.327 org.ccsds.moims.mo.mal.encoding.MALElementStreamFactory newFactory
+INFO: New encoding factory registered with classname: esa.mo.mal.encoder.binary.fixed.FixedBinaryStreamFactory
+2026-10-06 10:39:08.333 esa.mo.mal.transport.tcpip.TCPIPTransport createTransportAddress
+INFO: TCP/IP Transport address: 172.17.0.2:1024
+2026-10-06 10:39:08.341 esa.mo.com.impl.provider.ArchiveProviderServiceImpl init
+INFO: Archive service: READY! (51 ms)
+2026-10-06 10:39:08.342 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (0 ms)
+2026-10-06 10:39:08.349 esa.mo.sm.impl.provider.HeartbeatProviderServiceImpl init
+INFO: Heartbeat service: READY! (7 ms)
+2026-10-06 10:39:08.350 esa.mo.com.impl.provider.DirectoryProviderServiceImpl init
+INFO: Directory service: READY! (1 ms)
+2026-10-06 10:39:08.353 esa.mo.sm.impl.provider.AppsLauncherManager <init>
+INFO: Property not set: esa.mo.sm.impl.provider.appslauncher.FolderLocation 
+Using default apps directory: ../../apps
+2026-10-06 10:39:08.369 esa.mo.sm.impl.provider.AppsLauncherProviderServiceImpl init
+INFO: Apps Launcher service: READY! (18 ms)
+2026-10-06 10:39:08.379 esa.mo.sm.impl.provider.CommandExecutorProviderServiceImpl init
+INFO: Command Executor service: READY! (8 ms)
+2026-10-06 10:39:08.381 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl init
+INFO: Package Management service: READY! (0 ms)
+2026-10-06 10:39:08.386 esa.mo.com.impl.provider.ArchiveSyncProviderServiceImpl init
+INFO: ArchiveSync service: READY! (1 ms)
+2026-10-06 10:39:08.395 esa.mo.mc.impl.provider.ParameterProviderServiceImpl init
+INFO: Parameter service READY! (2 ms)
+2026-10-06 10:39:08.399 esa.mo.mc.impl.provider.ActionProviderServiceImpl init
+INFO: Action service READY! (2 ms)
+2026-10-06 10:39:08.400 esa.mo.mc.impl.provider.AlertProviderServiceImpl init
+INFO: Alert service READY! (1 ms)
+2026-10-06 10:39:08.410 esa.mo.mc.impl.provider.AggregationProviderServiceImpl init
+INFO: Aggregation service READY! (9 ms)
+2026-10-06 10:39:08.410 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Loading previous configurations...
+2026-10-06 10:39:08.466 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: Archive Backend started in 171 ms! Initializing Fast classes...
+2026-10-06 10:39:08.473 esa.mo.com.impl.provider.ArchiveManager lambda$init$0
+INFO: The Fast classes were initialized in 7 ms
+2026-10-06 10:39:08.544 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: Populating Directory service...
+2026-10-06 10:39:08.553 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor writeBootConfirmation
+INFO: Boot confirmation marker written: /nanosat-mo-framework/bootloader/boot-confirmed
+2026-10-06 10:39:08.554 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: NanoSat MO Supervisor initialized in 0.319 seconds!
+2026-10-06 10:39:08.554 esa.mo.nmf.nanosatmosupervisor.NanoSatMOSupervisor init
+INFO: URI: maltcp://172.17.0.2:1024/nanosat-mo-supervisor-Directory
+
+2026-10-06 10:39:13.490 esa.mo.mal.transport.tcpip.TCPIPServerConnectionListener run
+INFO: New TCP/IP client connected! From: 172.17.0.3:60910
+2026-10-06 10:39:13.586 esa.mo.sm.impl.provider.PackageManagementProviderServiceImpl install
+INFO: Installing: pwned-app-1.0.0-fixed.nmfpack
+2026-10-06 10:39:13.587 esa.mo.nmf.nmfpackage.NMFPackagePMBackend install
+INFO: Installing the package...
+Package name: pwned-app-1.0.0-fixed.nmfpack
+Package location: /nanosat-mo-framework/packages/pwned-app-1.0.0-fixed.nmfpack
+--------------
+2026-10-06 10:39:13.588 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Reading the package on: /nanosat-mo-framework/packages/pwned-app-1.0.0-fixed.nmfpack
+2026-10-06 10:39:13.596 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: Copying the files to the new locations...
+   >> Copying file to: /nanosat-mo-framework/apps/pwned-app/pwned-package-fixture-1.0.0.jar
+   >> Creating file on: /nanosat-mo-framework/apps/../../outside-target/pwned-app/start_app.sh
+   >> Creating file on: /nanosat-mo-framework/apps/../../outside-target/pwned-app/transport.properties
+   >> Creating file on: /nanosat-mo-framework/apps/../../outside-target/pwned-app/provider.properties
+2026-10-06 10:39:13.666 esa.mo.nmf.nmfpackage.NMFPackageManager install
+INFO: The User could not be created: app-../../outside-target/pwned-app
+java.io.IOException: There was an error with code 31. For command:
+ >> sudo adduser --system --shell /bin/bash --group app-../../outside-target/pwned-app
+err: Usernames must be no more than 32 bytes in length.
+
+Error:
+
+----
+
+2026-10-06 10:39:13.668 esa.mo.nmf.nmfpackage.NMFPackagePMBackend install
+SEVERE: The package 'pwned-app-1.0.0-fixed.nmfpack' could not be installed!
+java.io.FileNotFoundException: /nanosat-mo-framework/etc/installations-tracker/../../outside-target/pwned-app.receipt (No such file or directory)
+
+2026-10-06 10:39:14.055 esa.mo.mal.transport.gen.util.MessagePoller run
+INFO: (2) Client closing connection: maltcp://172.17.0.3:1024
+2026-10-06 10:39:14.057 esa.mo.mal.transport.gen.sending.ConcurrentMessageSender terminate
+INFO: Terminating all processing threads for sender for URI: maltcp://172.17.0.3:1024

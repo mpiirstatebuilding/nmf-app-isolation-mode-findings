@@ -1,0 +1,8 @@
+   >> Creating file on: /nanosat-mo-framework/apps/../../../../tmp/nmf-escape/start_app.sh
+   >> Creating file on: /nanosat-mo-framework/apps/../../../../tmp/nmf-escape/transport.properties
+   >> Creating file on: /nanosat-mo-framework/apps/../../../../tmp/nmf-escape/provider.properties
+INFO: The User could not be created: app-../../../../tmp/nmf-escape
+ >> sudo adduser --system --shell /bin/bash --group app-../../../../tmp/nmf-escape
+err: To avoid problems, the username must not start with adash, plus sign, or tilde, and it must not contain any of thefollowing: colon, comma, slash, or any whitespace charactersincluding spaces, tabs, and newlines.
+SEVERE: The package 'pwned-deep-1.0.0.nmfpack' could not be installed!
+java.io.FileNotFoundException: /nanosat-mo-framework/etc/installations-tracker/../../../../tmp/nmf-escape.receipt (No such file or directory)

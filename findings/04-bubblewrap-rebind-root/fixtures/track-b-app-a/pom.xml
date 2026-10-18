@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Track B fixture, "App A": writes a marker file into its own
+    AppStorage.getAppCacheDir() at startup. App B (sibling module) then
+    tries to read/write/delete that same file. See
+    findings/04-bubblewrap-rebind-root/README.md and docs/SETUP.md's
+    "Cross-app (Track B) setup".
+  -->
+
+  <parent>
+    <groupId>int.esa.nmf</groupId>
+    <artifactId>nanosat-mo-framework</artifactId>
+    <version>5.1</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>esa.mo.nmf.bench</groupId>
+  <artifactId>track-b-app-a</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <assembly.mainClass>esa.mo.nmf.apps.trackb.TrackBAppA</assembly.mainClass>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>int.esa.nmf.core</groupId>
+      <artifactId>nmf-composites</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>int.esa.nmf.core</groupId>
+        <artifactId>nmf-package-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>generate-nmf-package</goal>
+            </goals>
+            <configuration>
+              <mainClass>${assembly.mainClass}</mainClass>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
